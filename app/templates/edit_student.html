@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}
+
+Edit Examinee
+
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+<h1>
+
+Edit Examinee
+
+</h1>
+
+<p>
+
+Update the examinee information below.
+
+</p>
+
+<a
+class="back-link"
+href="{{ url_for('students.students') }}">
+
+<i class="fa-solid fa-arrow-left"></i>
+
+Back to Examinees
+
+</a>
+
+<hr>
+
+<form method="POST">
+
+<div class="form-group">
+
+<label>
+
+Student ID
+
+</label>
+
+<input
+name="student_id"
+value="{{ student.student_id }}"
+required>
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+Full Name
+
+</label>
+
+<input
+name="full_name"
+value="{{ student.full_name }}"
+required>
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+New Password
+
+</label>
+
+<input
+type="password"
+name="password"
+placeholder="Leave blank to keep the current password">
+
+<p class="page-description">
+Leave the password field empty if you do not want to change the current password.
+</p>
+
+</div>
+
+<button type="submit">
+<i class="fa-solid fa-floppy-disk"></i>
+Update Examinee
+
+</button>
+
+</form>
+
+</div>
+
+{% endblock %}

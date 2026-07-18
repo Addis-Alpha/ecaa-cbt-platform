@@ -1,0 +1,83 @@
+{% extends "base.html" %} 
+
+{% block title %} 
+  Administrator Dashboard 
+{% endblock%} 
+  
+{% block content %}
+
+<div class="card">
+  <h1 class="dashboard-title">
+    Administrator Dashboard
+  </h1>
+
+  <p class="dashboard-subtitle">
+    Welcome,
+    <b>{{ current_user.full_name }}</b>
+    <br />
+    Manage the ECAA CBT Platform.
+  </p>
+
+  <div class="dashboard-grid">
+    <div class="dashboard-card">
+      <h2>
+        <i class="fa-solid fa-circle-question"></i>
+        Question Bank
+      </h2>
+
+      <p>
+        Add, edit and organize questions for each examination.
+      </p>
+
+      <a 
+        href="{{ url_for('exams.exams') }}"> Manage Exams 
+      </a>
+    </div>
+
+    <div class="dashboard-card">
+      <h2>
+        <i class="fa-solid fa-file-lines"></i>
+        Examinees
+      </h2>
+
+      <p>
+        Register, update and manage examinee accounts.
+      </p>
+
+      <a href="{{ url_for('students.students') }}"> 
+        Manage Examinees 
+      </a>
+    </div>
+
+    <div class="dashboard-card">
+      <h2>
+        <i class="fa-solid fa-clipboard-check"></i>
+        Assigning to Exam
+      </h2>
+
+      <p>
+        Assign examinations to registered examinees.
+      </p>
+
+      <a href="{{ url_for('assignments.assign_exam') }}"> 
+        Manage Assignments 
+      </a>
+    </div>
+
+    <div class="dashboard-card">
+      <h2>
+        <i class="fa-solid fa-chart-column"></i>
+        Results
+      </h2>
+
+      <p>
+        View examination attempts, scores and pass/fail statistics.
+      </p>
+
+      <a href="{{ url_for('results.results') }}">
+        <b>View Results</b>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

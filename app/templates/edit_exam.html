@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Edit Examination
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h1>
+        Edit Examination
+    </h1>
+
+    <p>
+        Update the examination details below.
+    </p>
+
+    <a
+        class="back-link"
+        href="{{ url_for('exams.exams') }}">
+        <i class="fa-solid fa-arrow-left"></i>
+
+        Back to Examinations
+    </a>
+
+    <hr>
+
+    <form method="POST">
+
+        <div class="form-group">
+            <label>
+                Examination Code
+            </label>
+
+            <input
+                name="code"
+                value="{{ exam.code }}"
+                placeholder="Enter Examination Code"
+                autocomplete="off"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label>
+                Examination Title
+            </label>
+
+            <input
+                name="title"
+                value="{{ exam.title }}"
+                placeholder="Enter Examination Title"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label>
+                Duration (Minutes)
+            </label>
+
+            <input
+                type="number"
+                name="duration"
+                value="{{ exam.duration_minutes }}"
+                min="1"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label>
+                Pass Mark (%)
+            </label>
+
+            <input
+                type="number"
+                name="pass_mark"
+                value="{{ exam.pass_mark }}"
+                min="1"
+                max="100"
+                required>
+        </div>
+
+        <button type="submit">
+            <i class="fa-solid fa-floppy-disk"></i>
+
+            Update Examination
+        </button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Take Examination
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h1>
+        {{ exam.code }} — {{ exam.title }}
+    </h1>
+
+    <p>
+        Read each question carefully and select the best answer before proceeding.
+    </p>
+
+    <!-- Progress -->
+
+    <div style="margin-bottom:15px;">
+
+        <div class="progress">
+
+            <!--
+                BUG FIX: "style=" was previously written as plain text
+                INSIDE the div instead of as an attribute ON the div,
+                so the progress bar never actually rendered any width.
+                Also, "progress" was never passed in from the view --
+                it's computed here from current/total instead.
+            -->
+            <div
+                class="progress-bar"
+                style="width:{{ (current / total * 100) | round(1) }}%;">
+            </div>
+
+        </div>
+
+        <small>
+            Question {{ current }} of {{ total }}
+        </small>
+
+    </div>
+
+    <div class="exam-header">
+
+        <div>
+
+            <b>
+                Current Question
+            </b>
+
+        </div>
+
+        <div class="timer-box">
+
+            <i class="fa-solid fa-clock"></i>
+
+            Time Remaining :
+
+            <span id="timer">
+                00:00
+            </span>
+
+        </div>
+
+    </div>
+
+    <hr>
+
+    <form
+        id="examForm"
+        method="POST"
+        autocomplete="off">
+
+        <!--
+            BUG FIX: hidden field so the server can confirm the
+            answer being submitted actually belongs to the question
+            currently shown. Required by the matching fix in
+            exam_session.py -- without this the view can't tell
+            these apart.
+        -->
+        <input
+            type="hidden"
+            name="question_id"
+            value="{{ question.id }}">
+
+        <div class="question-box">
+
+            <h3>
+
+                Question {{ current }}
+
+            </h3>
+
+            <p>
+
+                {{ question.question_text }}
+
+            </p>
+
+        </div>
+
+        <div class="options">
+
+            <!--
+                REQUIREMENT: student must pick an option before they
+                can advance. "required" on a radio input applies to
+                the whole name="answer" group, so having it on every
+                option (not just the first) is what actually makes
+                every browser enforce it consistently -- some browsers
+                only honor "required" if it's present on the specific
+                input the user interacts with.
+            -->
+
+            <label>
+
+                <input
+                    type="radio"
+                    name="answer"
+                    value="A"
+                    required>
+
+                <strong>A.</strong>
+
+                {{ question.option_a }}
+
+            </label>
+
+            <label>
+
+                <input
+                    type="radio"
+                    name="answer"
+                    value="B"
+                    required>
+
+                <strong>B.</strong>
+
+                {{ question.option_b }}
+
+            </label>
+
+            <label>
+
+                <input
+                    type="radio"
+                    name="answer"
+                    value="C"
+                    required>
+
+                <strong>C.</strong>
+
+                {{ question.option_c }}
+
+            </label>
+
+            <label>
+
+                <input
+                    type="radio"
+                    name="answer"
+                    value="D"
+                    required>
+
+                <strong>D.</strong>
+
+                {{ question.option_d }}
+
+            </label>
+
+        </div>
+
+        <br>
+
+        {% if last %}
+
+        <button
+            id="submitBtn"
+            type="submit">
+
+            <i class="fa-solid fa-paper-plane"></i>
+
+            Submit Examination
+
+        </button>
+
+        {% else %}
+
+        <button
+            id="submitBtn"
+            type="submit">
+
+            Next Question
+            <i class="fa-solid fa-arrow-right"></i>
+
+        </button>
+
+        {% endif %}
+
+    </form>
+
+</div>
+
+<script>
+
+let seconds = Number("{{ remaining }}");
+
+let submitted = false;
+
+const form = document.getElementById("examForm");
+
+const button = document.getElementById("submitBtn");
+
+
+// ----------------------------
+// Timer
+// ----------------------------
+
+function updateTimer() {
+
+    let minutes = Math.floor(seconds / 60);
+
+    let secs = seconds % 60;
+
+    document.getElementById("timer").innerHTML =
+        String(minutes).padStart(2, "0") +
+        ":" +
+        String(secs).padStart(2, "0");
+
+    if (seconds <= 0) {
+
+        submitExam();
+
+        return;
+
+    }
+
+    seconds--;
+
+}
+
+updateTimer();
+
+setInterval(updateTimer, 1000);
+
+
+// ----------------------------
+// Prevent double submit
+// ----------------------------
+
+form.addEventListener("submit", function (event) {
+
+    if (submitted) {
+
+        event.preventDefault();
+
+        return;
+
+    }
+
+    submitted = true;
+
+    button.disabled = true;
+
+});
+
+
+// ----------------------------
+// Automatic submission
+// ----------------------------
+
+function submitExam() {
+
+    if (!submitted) {
+
+        submitted = true;
+
+        button.disabled = true;
+
+        form.submit();
+
+    }
+
+}
+
+
+// ----------------------------
+// Warn before refresh/closing
+// ----------------------------
+
+window.addEventListener("beforeunload", function (e) {
+
+    if (!submitted) {
+
+        e.preventDefault();
+
+        e.returnValue = "";
+
+    }
+
+});
+
+
+// ----------------------------
+// Discourage Back button
+// ----------------------------
+
+history.pushState(null, null, location.href);
+
+window.onpopstate = function () {
+
+    history.go(1);
+
+};
+
+</script>
+
+{% endblock %}

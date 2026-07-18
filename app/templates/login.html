@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Login
+{% endblock %}
+
+{% block content %}
+<div class="login-card">
+
+    <img
+        src="{{ url_for('static', filename='images/ecaa_logo.png') }}"
+        class="login-logo"
+        alt="ECAA CBT">
+
+    <h2>
+        Ethiopian Civil Aviation Authority
+    </h2>
+
+    <h3>
+        Computer Based Testing Platform
+    </h3>
+
+    <p class="login-subtitle">
+        Welcome
+    <br>
+        Please sign in to continue.
+    </p>
+
+    <form method="POST">
+        <div class="form-group">
+            <label>
+                Username or Examinee ID
+            </label>
+
+            <input
+                name="username"
+                placeholder="Enter your username or Examinee ID"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label>
+                Password
+            </label>
+
+            <input
+                type="password"
+                name="password"
+                placeholder="Enter your password"
+                required>
+        </div>
+
+        <button
+            type="submit">
+            Sign In
+        </button>
+    </form>
+</div>
+{% endblock %}

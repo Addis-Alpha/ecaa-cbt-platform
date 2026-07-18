@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Examinee Management
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h1>
+        Examinee Management
+    </h1>
+
+    <p>
+        Register new examinees and manage existing examinee accounts.
+    </p>
+
+    <hr>
+
+    <form method="POST">
+        <div class="form-group">
+            <label>
+                Examinee ID
+            </label>
+
+            <input
+            name="student_id"
+            placeholder="Enter Student ID"
+            required>
+        </div>
+
+        <div class="form-group">
+            <label>
+                Full Name
+            </label>
+
+            <input
+            name="full_name"
+            placeholder="Enter Full Name"
+            required>
+        </div>
+    
+        <div class="form-group">
+            <label>
+                Password
+            </label>
+
+            <input
+            type="password"
+            name="password"
+            placeholder="Create Password"
+            required>
+        </div>
+
+        <button type="submit">
+            <i class="fa-solid fa-user-plus"></i>
+            Add Examinee
+        </button>
+
+    </form>
+
+    <hr>
+
+    <h2>
+        Registered Examinees
+    </h2>
+
+    {% if students %}
+
+    <table>
+        <tr>
+            <th>
+                Examinee ID
+            </th>
+
+            <th>
+                Full Name
+            </th>
+
+            <th>
+                Actions
+            </th>
+
+        </tr>
+
+        {% for s in students %}
+        <tr>
+            <td>
+                {{ s.student_id }}
+            </td>
+
+            <td>
+                {{ s.full_name }}
+            </td>
+
+            <td>
+                <a 
+                    href="{{ url_for('students.edit_student', id=s.id) }}">
+                    <b>Edit Examinee</b>
+                </a>
+
+                |
+
+                <a
+                    href="{{ url_for('students.delete_student', id=s.id) }}"
+                    onclick="return confirm('Are you sure you want to delete this examinee?');">
+                    <b>Delete Examinee</b>
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+
+    </table>
+
+    {% else %}
+        <div class="message">
+            No examinees have been registered yet.
+        </div>
+    {% endif %}
+
+    <br>
+
+    <a 
+        class="back-link"
+        href="{{ url_for('admin.dashboard') }}">
+        <i class="fa-solid fa-arrow-left"></i>
+        Back to Dashboard
+    </a>
+
+</div>
+{% endblock %}

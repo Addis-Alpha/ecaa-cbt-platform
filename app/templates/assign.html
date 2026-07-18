@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Examination Assignment
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>
+        Assign Examination
+    </h1>
+    
+    <p>
+        Select an examinee and an examination to create an examination assignment.
+    </p>
+
+    <p style="margin-left: auto; width: fit-content;">
+        <a href="{{ url_for('assignments.manage_assignments') }}">
+            <i class="fa-solid fa-list"></i>
+            <b>View / Remove Existing Assignments</b>
+        </a>
+    </p>
+
+    <hr>
+
+    {% if students and exams %}
+    <form method="POST">
+        <div class="form-group">
+            <label>
+                Select Examinee
+            </label>
+
+            <select name="student" required>
+                {% for s in students %}
+                <option value="{{ s.id }}">
+                    {{ s.student_id }} — {{ s.full_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>
+                Select Examination
+            </label>
+
+            <select name="exam" required>
+                {% for e in exams %}
+                <option value="{{ e.id }}">
+                    {{ e.code }} — {{ e.title }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit">
+            <i class="fa-solid fa-share"></i>
+            Assign Examination
+        </button>
+    </form>
+
+    {% else %}
+    <div class="message">
+        Assignments cannot be created because no examinees or examinations are currently available.
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

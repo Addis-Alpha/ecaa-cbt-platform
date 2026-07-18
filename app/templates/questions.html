@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Question Management
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>
+    {{ exam.code }} — {{ exam.title }}
+    </h1>
+
+    <p>
+    Manage questions for this examination.
+    </p>
+
+    <a
+    class="back-link"
+    href="{{ url_for('exams.exams') }}">
+
+    ← Back to Examinations
+    </a>
+
+    <hr>
+
+    <h3>
+    Add New Question
+    </h3>
+
+    <form method="POST">
+        <div class="form-group">
+            <label>
+                Question
+            </label>
+
+            <textarea
+                name="question"
+                placeholder="Enter the question"
+                required>
+            </textarea>
+        </div>
+
+        <div class="form-group">
+            <label>
+                Option A
+            </label>
+
+            <input
+                name="a"
+                placeholder="Enter Option A"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label>
+                Option B
+            </label>
+
+            <input
+                name="b"
+                placeholder="Enter Option B"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label>
+                Option C
+            </label>
+
+            <input
+                name="c"
+                placeholder="Enter Option C"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label>
+                Option D
+            </label>
+
+            <input
+                name="d"
+                placeholder="Enter Option D"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label>
+                Correct Answer
+            </label>
+
+            <select name="answer">
+                <option>A</option>
+                <option>B</option>
+                <option>C</option>
+                <option>D</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>
+                Marks
+            </label>
+
+            <input
+                type="number"
+                name="marks"
+                value="1"
+                min="1"
+                required>
+        </div>
+
+        <button type="submit">
+            Add Question
+        </button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>
+        Question Bank
+    </h2>
+
+    {% if exam.questions %}
+    <table>
+        <tr>
+            <th>
+            #
+            </th>
+
+            <th>
+                Question
+            </th>
+
+            <th>
+                Correct Answer
+            </th>
+
+            <th>
+                Marks
+            </th>
+
+            <th>
+                Actions
+            </th>
+        </tr>
+
+        {% for q in exam.questions %}
+        <tr>
+            <td>
+            {{ loop.index }}
+            </td>
+        <td>
+
+        <b>{{ q.question_text }}</b>
+
+        <br><br>
+
+        A. {{ q.option_a }}
+
+        <br>
+
+        B. {{ q.option_b }}
+
+        <br>
+
+        C. {{ q.option_c }}
+
+        <br>
+
+        D. {{ q.option_d }}
+
+        </td>
+
+        <td>
+
+        {{ q.correct_answer }}
+
+        </td>
+
+        <td>
+
+        {{ q.marks }}
+
+        </td>
+
+        <td>
+
+        <a 
+            href="{{ url_for('questions.edit_question', id=q.id) }}">
+            Edit
+        </a>
+
+        |
+
+        <a
+            href="{{ url_for('questions.delete_question', id=q.id) }}"
+            onclick="return confirm('Are you sure you want to delete this question?');">
+
+            Delete
+        </a>
+
+        </td>
+
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+    {% else %}
+
+    <div class="message">
+        No questions have been added to this examination yet.
+    </div>
+
+    {% endif %}
+
+    <hr>
+
+    <a
+        class="back-link"
+        href="{{ url_for('exams.exams') }}">
+
+        ← Back to Examinations
+    </a>
+</div>
+{% endblock %}

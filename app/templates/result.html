@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Examination Result
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h1>
+        Examination Result
+    </h1>
+
+    <p>
+        Your examination has been submitted and graded successfully.
+    </p>
+
+    <hr>
+
+    <h2>
+        {{ exam.code }} — {{ exam.title }}
+    </h2>
+
+    <table>
+        <tr>
+            <th>Item</th>
+            <th>Result</th>
+        </tr>
+
+        <tr>
+            <td>Score</td>
+            <td>{{ score }} / {{ total }}</td>
+        </tr>
+
+        <tr>
+            <td>Percentage</td>
+            <td>{{ percentage }}%</td>
+        </tr>
+
+        <tr>
+            <td>Pass Mark</td>
+            <td>{{ exam.pass_mark }}%</td>
+        </tr>
+
+        <tr>
+            <td>Status</td>
+            <td>
+                {% if passed %}
+                Passed
+                {% else %}
+                Failed
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+
+    <br>
+
+    {% if passed %}
+    <div class="pass">
+        ✅ PASSED
+    </div>
+
+    {% else %}
+
+    <div class="fail">
+        ❌ FAILED
+    </div>
+    {% endif %}
+
+    <br>
+
+    <p>
+        <a href="{{ url_for('student.student_dashboard') }}">
+        <b>← Return to Dashboard</b>
+        </a>
+    </p>
+
+    <p>
+        <a href="{{ url_for('results.student_results') }}">
+            <b>View Result History</b>
+        </a>
+    </p>
+</div>
+{% endblock %}

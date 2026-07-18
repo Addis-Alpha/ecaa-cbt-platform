@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <title>
+            {% block title %}
+                ECAA CBT Platform
+            {% endblock %}
+        </title>
+
+        <link 
+            rel="stylesheet" 
+            href="{{ url_for('static', filename='style.css') }}">
+
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    </head>
+
+    <body>
+        <header class="header">
+            <div class="logo-area">
+
+                <img
+                    src="{{ url_for('static', filename='images/ecaa_logo.png') }}"
+                    class="login-logo"
+                    alt="ECAA">
+
+                <div>
+                    <h1>
+                        Ethiopian Civil Aviation Authority (ECAA)
+                    </h1>
+                    <h1>
+                        Computer Based Testing (CBT) System Platform
+                    </h1>
+                </div>
+            </div>
+
+            {% if current_user.is_authenticated %}
+            <div class="user-info">
+                <b>
+                    {{ current_user.full_name }}
+                </b>
+
+                <br>
+
+                    {{ current_user.role|title }}
+                    {% if current_user.role=="student" %}
+                <br>
+                    ID:
+                    {{ current_user.student_id }}
+                    {% endif %}
+            </div>
+            {% endif %}
+        </header>
+
+        {% if current_user.is_authenticated %}
+        <nav class="navbar">
+
+            {% if current_user.role=="admin" %}
+            <a 
+                href="{{ url_for('admin.dashboard') }}">
+                <i class="fa-solid fa-house"></i>
+                Dashboard
+            </a>
+
+            {% else %}
+            <a href="{{ url_for('student.student_dashboard') }}">
+                <i class="fa-solid fa-house"></i>
+                Dashboard
+            </a>
+            {% endif %}
+
+            <a href="{{ url_for('auth.logout') }}">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                Logout
+            </a>
+        </nav>
+        {% endif %}
+
+        <div class="container">
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            {% for msg in messages %}
+            <div class="message">
+                <i class="fa-solid fa-circle-check"></i>
+                {{ msg }}
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+            {% block content %}
+            {% endblock %}
+        </div>
+        <footer>
+            <hr>
+            <p>
+                © 2026 Ethiopian Civil Aviation Authority
+                <br>
+                Computer Based Testing System
+                <br>
+                Developed By Addishiwot K. (afdocz@gmail.com)
+            </p>
+        </footer>
+    </body>
+</html>

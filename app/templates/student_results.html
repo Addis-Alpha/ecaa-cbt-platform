@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}
+    My Examination Results
+{% endblock %}
+
+{% block content %}
+<div class="card">
+
+    <h1>
+        My Examination Results
+    </h1>
+
+    <p>
+        Review your completed examinations and their results.
+    </p>
+
+    <hr>
+
+    {% if attempts %}
+
+    <p>
+
+    <b>Total Completed Examinations:</b>
+
+    {{ attempts|length }}
+
+    </p>
+
+    <table>
+
+        <tr>
+
+            <th>
+                Examination
+            </th>
+
+            <th>
+                Score
+            </th>
+
+            <th>
+                Percentage
+            </th>
+
+            <th>
+                Status
+            </th>
+
+            <th>
+                Completed On
+            </th>
+
+        </tr>
+
+        {% for a in attempts %}
+
+        <tr>
+
+            <td>
+                {{ a.exam.code }} — {{ a.exam.title }}
+            </td>
+
+            <td>
+                {{ a.score }}
+            </td>
+
+            <td>
+                {{ a.percentage }}%
+            </td>
+
+            <td>
+
+            {% if a.passed %}
+
+                <span class="pass">
+                    PASS
+                </span>
+
+            {% else %}
+
+                <span class="fail">
+                    FAIL
+                </span>
+
+            {% endif %}
+
+            </td>
+
+            <td>
+                {{ a.created_at.strftime("%d %b %Y %H:%M") }}
+            </td>
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+    {% else %}
+
+    <div class="message">
+        You have not completed any examinations yet. Your results will appear here after you finish an assigned examination.
+    </div>
+
+    {% endif %}
+
+    <br>
+
+    <a
+    class="back-link"
+    href="{{ url_for('student.student_dashboard') }}">
+
+    ← Return to Dashboard
+    </a>
+
+</div>
+{% endblock %}

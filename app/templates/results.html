@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}
+Examination Result History
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h1>
+        Examination Result History
+    </h1>
+
+    <p>
+        View all examination attempts completed by examinees.
+    </p>
+
+    <hr>
+
+    {% if attempts %}
+
+    <p>
+        <b>Total Attempts:</b>
+        {{ attempts|length }}
+    </p>
+
+    <table>
+
+    <tr>
+
+        <th>
+            Student ID
+        </th>
+
+        <th>
+            Examinee
+        </th>
+
+        <th>
+            Examination
+        </th>
+
+        <th>
+            Score
+        </th>
+
+        <th>
+            Percentage
+        </th>
+
+        <th>
+            Status
+        </th>
+
+        <th>
+            Completed On
+        </th>
+
+    </tr>
+
+{% for a in attempts %}
+
+<tr>
+
+<td>
+
+{{ a.student.student_id }}
+
+</td>
+
+<td>
+
+{{ a.student.full_name }}
+
+</td>
+
+<td>
+
+{{ a.exam.code }} — {{ a.exam.title }}
+
+</td>
+
+<td>
+
+{{ a.score }}
+
+</td>
+
+<td>
+
+{{ a.percentage }}%
+
+</td>
+
+<td>
+
+{% if a.passed %}
+
+<span class="pass">
+
+PASS
+
+</span>
+
+{% else %}
+
+<span class="fail">
+
+FAIL
+
+</span>
+
+{% endif %}
+
+</td>
+
+<td>
+
+{{ a.created_at.strftime("%d %b %Y %H:%M") }}
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+    </table>
+
+{% else %}
+
+    <div class="message">
+        No examination attempts have been recorded yet.
+    </div>
+
+{% endif %}
+
+    <br>
+
+    <a 
+        class="back-link"
+        href="{{ url_for('admin.dashboard') }}">
+        <i class="fa-solid fa-arrow-left"></i>
+        Back to Dashboard
+    </a>
+
+</div>
+
+{% endblock %}

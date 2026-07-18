@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Edit Question
+{% endblock %}
+
+{% block content %}
+<div class="card">
+
+    <h1>
+
+    Edit Question
+
+    </h1>
+
+    <p>
+        Update the question details, answer options, correct answer and marks.
+    </p>
+
+    <a
+        class="back-link"
+        href="{{ url_for('questions.exam_questions', id=question.exam_id) }}">
+        <i class="fa-solid fa-arrow-left"></i>
+
+        Back to Question Bank
+    </a>
+
+    <hr>
+
+    <form method="POST">
+        <div class="form-gruop">
+            <label>
+                Question
+            </label>
+
+            <textarea
+                name="question"
+                placeholder="Enter the question"
+                required>{{ question.question_text }}
+            </textarea>
+
+        </div>
+
+        <div class="form-gruop">
+            <label>
+                Option A
+            </label>
+
+            <input
+                name="a"
+                value="{{ question.option_a }}"
+                placeholder="Enter Option A"
+                required>
+        </div>
+
+        <div class="form-gruop">
+            <label>
+                Option B
+            </label>
+
+            <input
+                name="b"
+                value="{{ question.option_b }}"
+                placeholder="Enter Option B"
+                required>
+        </div>
+
+        <div class="form-gruop">
+            <label>
+                Option C
+            </label>
+
+            <input
+                name="c"
+                value="{{ question.option_c }}"
+                placeholder="Enter Option C"
+                required>
+        </div>
+
+        <div class="form-gruop">
+            <label>
+                Option D
+            </label>
+
+            <input
+                name="d"
+                value="{{ question.option_d }}"
+                placeholder="Enter Option D"
+                required>
+        </div>
+
+        <div class="form-gruop">
+            <label>
+                Correct Answer
+            </label>
+
+            <select name="answer">
+
+                <option value="A"
+                    {% if question.correct_answer=="A" %}
+                    selected
+                    {% endif %}>
+
+                    A
+                </option>
+
+                <option value="B"
+                    {% if question.correct_answer=="B" %}
+                    selected
+                    {% endif %}>
+
+                    B
+                </option>
+
+                <option value="C"
+                    {% if question.correct_answer=="C" %}
+                    selected
+                    {% endif %}>
+
+                    C
+                </option>
+
+                <option value="D"
+                    {% if question.correct_answer=="D" %}
+                    selected
+                    {% endif %}>
+
+                    D
+                </option>
+            </select>
+        </div>
+
+        <div clas="form-gruop">
+            <label>
+                Marks
+            </label>
+
+            <input
+                type="number"
+                name="marks"
+                value="{{ question.marks }}"
+                min="1"
+                required>
+        </div>
+        
+        <button type="submit">
+            <i class="fa-solid fa-floppy-disk"></i>
+            Update Question
+        </button>
+    </form>
+</div>
+{% endblock %}

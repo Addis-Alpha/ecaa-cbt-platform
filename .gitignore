@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Conda
+.envs/
+
+# Flask
+instance/
+
+# Environment variables
+.env
+
+# Database
+*.db
+
+# Logs
+logs/*.log
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Build
+dist/
+build/
+
+# Python packaging
+*.egg-info/
+
+# Cache
+.pytest_cache/
+.mypy_cache/

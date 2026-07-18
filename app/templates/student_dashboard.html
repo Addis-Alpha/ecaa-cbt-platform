@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Student Dashboard
+{% endblock %}
+
+{% block content %}
+    <div class="card">
+
+        <h1>
+            Welcome, {{ current_user.full_name }}
+        </h1>
+
+        <p>
+        <b>Examinee ID:</b>
+        {{ current_user.student_id }}
+        </p>
+
+    </div>
+
+    {% if cards %}
+    <div class="dashboard-grid">
+
+        {% for c in cards %}
+            <div class="dashboard-card">
+
+                <h2>
+                    {{ c.exam.code }}
+                </h2>
+
+                <h3>
+                    {{ c.exam.title }}
+                </h3>
+
+                <p>
+                <b>Duration:</b>
+                    {{ c.exam.duration_minutes }} minutes
+                </p>
+
+                <p>
+                <b>Pass Mark:</b>
+                    {{ c.exam.pass_mark }}%
+                </p>
+
+                <p>
+                    <b>Questions:</b>
+                    {{ c.exam.questions|length }}
+                </p>
+
+                {% if c.status == "completed" %}
+                    <div class="pass">
+                        Completed
+                    </div>
+
+                    <p>
+                        <b>Score:</b>
+                        {{ c.attempt.score }}
+                    </p>
+
+                    <p>
+                        <b>Percentage:</b>
+                        {{ c.attempt.percentage }}%
+                    </p>
+
+                {% else %}
+                    <div class="message">
+                        You Are Assigned to this Exam
+                    </div>
+
+                    <a href="{{ url_for('exam_session.start_exam', id=c.exam.id) }}">
+                        Start Examination
+                    </a>
+                {% endif %}
+
+            </div>
+        {% endfor %}
+
+    </div>
+
+    {% else %}
+    <div class="card">
+
+        <div class="message">
+            You currently have no assigned examinations.
+            Please contact your administrator if you believe this is incorrect.
+        </div>
+
+    </div>
+
+    {% endif %}
+    <br>
+    <div class="card">
+
+        <h2>
+            My Result History
+        </h2>
+
+        <p>
+            View all completed examinations and previous results.
+        </p>
+
+        <a href="{{ url_for('results.student_results') }}">
+            <b>View Result History</b>
+        </a>
+
+    </div>
+
+{% endblock %}

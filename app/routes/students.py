@@ -1,0 +1,229 @@
+from flask import (
+    Blueprint,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+)
+
+from flask_login import (
+    login_required,
+    current_user,
+)
+
+from werkzeug.security import (
+    generate_password_hash,
+)
+
+from app.extensions import db
+from app.models.user import User
+from app.logger import app_logger
+
+
+students_bp = Blueprint(
+    "students",
+    __name__,
+)
+
+
+# ==========================
+# MANAGE STUDENTS
+# ==========================
+
+@students_bp.route(
+    "/students",
+    methods=["GET", "POST"],
+)
+@login_required
+def students():
+
+    if current_user.role != "admin":
+        return "Access denied", 403
+
+    if request.method == "POST":
+
+        student_id = request.form.get(
+            "student_id",
+            ""
+        ).strip()
+
+        full_name = request.form.get(
+            "full_name",
+            ""
+        ).strip()
+
+        password = request.form.get(
+            "password",
+            ""
+        )
+
+        existing = User.query.filter_by(
+            student_id=student_id
+        ).first()
+
+        if existing:
+
+            flash(
+                "Student ID already exists."
+            )
+
+        else:
+
+            student = User(
+                username=None,
+                student_id=student_id,
+                full_name=full_name,
+                password=generate_password_hash(password),
+                role="student",
+            )
+
+            db.session.add(student)
+            db.session.commit()
+
+            app_logger.info(
+                f"STUDENT CREATED | "
+                f"StudentID={student.student_id} | "
+                f"By={current_user.username}"
+            )
+
+            flash(
+                "Student added successfully."
+            )
+
+            return redirect(
+                url_for(
+                    "students.students"
+                )
+            )
+
+    students = User.query.filter_by(
+        role="student"
+    ).order_by(
+        User.full_name
+    ).all()
+
+    return render_template(
+        "students.html",
+        students=students,
+    )
+
+
+# ==========================
+# EDIT STUDENT
+# ==========================
+
+@students_bp.route(
+    "/students/edit/<int:id>",
+    methods=["GET", "POST"],
+)
+@login_required
+def edit_student(id):
+
+    if current_user.role != "admin":
+        return "Access denied", 403
+
+    student = User.query.get_or_404(id)
+
+    if request.method == "POST":
+
+        new_student_id = request.form.get(
+            "student_id",
+            ""
+        ).strip()
+
+        duplicate = User.query.filter(
+            User.student_id == new_student_id,
+            User.id != student.id,
+        ).first()
+
+        if duplicate:
+
+            flash(
+                "Student ID already exists."
+            )
+
+            return redirect(
+                url_for(
+                    "students.edit_student",
+                    id=id,
+                )
+            )
+
+        student.student_id = new_student_id
+        student.full_name = request.form.get(
+            "full_name",
+            ""
+        ).strip()
+
+        password = request.form.get(
+            "password",
+            ""
+        )
+
+        if password:
+
+            student.password = generate_password_hash(
+                password
+            )
+
+        db.session.commit()
+
+        app_logger.info(
+            f"STUDENT UPDATED | "
+            f"StudentID={student.student_id} | "
+            f"By={current_user.username}"
+        )
+
+        flash(
+            "Student updated successfully."
+        )
+
+        return redirect(
+            url_for(
+                "students.students"
+            )
+        )
+
+    return render_template(
+        "edit_student.html",
+        student=student,
+    )
+
+
+# ==========================
+# DELETE STUDENT
+# ==========================
+
+@students_bp.route(
+    "/students/delete/<int:id>"
+)
+@login_required
+def delete_student(id):
+
+    if current_user.role != "admin":
+        return "Access denied", 403
+
+    student = User.query.get_or_404(id)
+
+    if student.role != "student":
+        return "Cannot delete administrator.", 403
+
+    app_logger.info(
+        f"STUDENT DELETED | "
+        f"StudentID={student.student_id} | "
+        f"By={current_user.username}"
+    )
+
+    db.session.delete(student)
+    db.session.commit()
+
+    flash(
+        "Student deleted successfully."
+    )
+
+    return redirect(
+        url_for(
+            "students.students"
+        )
+    )
