@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Search Questions
+{% endblock %}
+
+{% block content %}
+<div class="card">
+
+    <h1>
+        Search Questions
+    </h1>
+
+    <p>
+        Search question text and answer options across every
+        examination in the system.
+    </p>
+
+    <form method="GET" class="search-form">
+        <div class="search-group">
+            <input
+                type="text"
+                name="q"
+                placeholder="Enter a keyword..."
+                value="{{ keyword }}"
+                autofocus>
+
+            <button type="submit">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                Search
+            </button>
+
+            {% if keyword %}
+            <a href="{{ url_for('questions.search_questions') }}" class="back-link">
+                Clear
+            </a>
+            {% endif %}
+        </div>
+    </form>
+
+    <a
+        class="back-link"
+        href="{{ url_for('exams.exams') }}">
+        ← Back to Examinations
+    </a>
+
+</div>
+
+<div class="card">
+
+    {% if keyword and results %}
+
+    <h2>
+        {{ results|length }} result{{ 's' if results|length != 1 else '' }} for "{{ keyword }}"
+    </h2>
+
+    <table>
+        <tr>
+            <th>
+                Exam
+            </th>
+
+            <th>
+                Question
+            </th>
+
+            <th>
+                Correct Answer
+            </th>
+
+            <th>
+                Marks
+            </th>
+
+            <th>
+                Actions
+            </th>
+        </tr>
+
+        {% for row in results %}
+        <tr>
+            <td>
+                {{ row.exam.code }}
+                <br>
+                <small>{{ row.exam.title }}</small>
+            </td>
+
+            <td>
+                <b>{{ row.question.question_text }}</b>
+
+                <br><br>
+
+                A. {{ row.question.option_a }}<br>
+                B. {{ row.question.option_b }}<br>
+                C. {{ row.question.option_c }}<br>
+                D. {{ row.question.option_d }}
+            </td>
+
+            <td>
+                {{ row.question.correct_answer }}
+            </td>
+
+            <td>
+                {{ row.question.marks }}
+            </td>
+
+            <td>
+                <a href="{{ url_for('questions.edit_question', id=row.question.id) }}">
+                    Edit
+                </a>
+
+                |
+
+                <a href="{{ url_for('questions.exam_questions', id=row.exam.id) }}">
+                    View in Exam
+                </a>
+
+                |
+
+                <a
+                    href="{{ url_for('questions.delete_question', id=row.question.id) }}"
+                    onclick="return confirm('Are you sure you want to delete this question?');">
+                    Delete
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+
+    </table>
+
+    {% elif keyword %}
+
+    <div class="message">
+        No questions matched "{{ keyword }}".
+    </div>
+
+    {% else %}
+
+    <div class="message">
+        Enter a keyword above to search question text and answer
+        options across every examination.
+    </div>
+
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -5,6 +5,7 @@ from flask import (
     redirect,
     url_for,
     flash,
+    abort,
 )
 
 from flask_login import (
@@ -39,7 +40,7 @@ students_bp = Blueprint(
 def students():
 
     if current_user.role != "admin":
-        return "Access denied", 403
+        abort(403)
 
     if request.method == "POST":
 
@@ -97,15 +98,37 @@ def students():
                 )
             )
 
-    students = User.query.filter_by(
+    # NEW: search/filter examinees by ID or name.
+    # GET /students?q=keyword -- case-insensitive, matches either
+    # field. Empty/omitted "q" behaves exactly as before (full list).
+    search = request.args.get(
+        "q",
+        ""
+    ).strip()
+
+    query = User.query.filter_by(
         role="student"
-    ).order_by(
+    )
+
+    if search:
+
+        like = f"%{search}%"
+
+        query = query.filter(
+            db.or_(
+                User.student_id.ilike(like),
+                User.full_name.ilike(like),
+            )
+        )
+
+    students = query.order_by(
         User.full_name
     ).all()
 
     return render_template(
         "students.html",
         students=students,
+        search=search,
     )
 
 
@@ -121,7 +144,7 @@ def students():
 def edit_student(id):
 
     if current_user.role != "admin":
-        return "Access denied", 403
+        abort(403)
 
     student = User.query.get_or_404(id)
 
@@ -202,12 +225,12 @@ def edit_student(id):
 def delete_student(id):
 
     if current_user.role != "admin":
-        return "Access denied", 403
+        abort(403)
 
     student = User.query.get_or_404(id)
 
     if student.role != "student":
-        return "Cannot delete administrator.", 403
+        abort(403)
 
     app_logger.info(
         f"STUDENT DELETED | "

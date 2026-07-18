@@ -5,6 +5,7 @@ from flask import (
     redirect,
     url_for,
     flash,
+    abort,
 )
 
 from flask_login import (
@@ -36,7 +37,7 @@ questions_bp = Blueprint(
 def exam_questions(id):
 
     if current_user.role != "admin":
-        return "Access denied", 403
+        abort(403)
 
     exam = Exam.query.get_or_404(id)
 
@@ -125,6 +126,73 @@ def exam_questions(id):
 
 
 # ==========================
+# SEARCH QUESTIONS (ALL EXAMS)
+# ==========================
+#
+# NEW: unlike exam_questions() above, which lists questions for ONE
+# exam, this searches question text AND answer options across EVERY
+# exam at once. Built as its own route/page rather than a filter on
+# exam_questions() since there's no single exam context to scope it
+# to -- the admin explicitly wants to find a question wherever it
+# lives.
+
+@questions_bp.route(
+    "/questions/search",
+    methods=["GET"],
+)
+@login_required
+def search_questions():
+
+    if current_user.role != "admin":
+        abort(403)
+
+    keyword = request.args.get(
+        "q",
+        ""
+    ).strip()
+
+    results = []
+
+    if keyword:
+
+        like = f"%{keyword}%"
+
+        # Explicit join + tuple pairing rather than relying on a
+        # Question.exam relationship (not confirmed to exist on the
+        # model) -- same defensive pattern used for the assignment
+        # management page.
+        rows = (
+            db.session.query(Question, Exam)
+            .join(Exam, Exam.id == Question.exam_id)
+            .filter(
+                db.or_(
+                    Question.question_text.ilike(like),
+                    Question.option_a.ilike(like),
+                    Question.option_b.ilike(like),
+                    Question.option_c.ilike(like),
+                    Question.option_d.ilike(like),
+                )
+            )
+            .order_by(
+                Exam.code.asc(),
+                Question.id.asc(),
+            )
+            .all()
+        )
+
+        results = [
+            {"question": q, "exam": e}
+            for q, e in rows
+        ]
+
+    return render_template(
+        "search_questions.html",
+        keyword=keyword,
+        results=results,
+    )
+
+
+# ==========================
 # EDIT QUESTION
 # ==========================
 
@@ -136,7 +204,7 @@ def exam_questions(id):
 def edit_question(id):
 
     if current_user.role != "admin":
-        return "Access denied", 403
+        abort(403)
 
     question = Question.query.get_or_404(id)
 
@@ -229,7 +297,7 @@ def edit_question(id):
 def delete_question(id):
 
     if current_user.role != "admin":
-        return "Access denied", 403
+        abort(403)
 
     question = Question.query.get_or_404(id)
 

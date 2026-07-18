@@ -549,3 +549,35 @@ background:#991b1b;
 .error-card.error-danger .btn-error-return:hover{
 background:#7f1d1d;
 }
+
+/* ==========================
+   SEARCH / FILTER BOXES
+   Used on Examinee Management, Examination Management, and the
+   global Search Questions page.
+========================== */
+
+.search-form{
+margin-bottom:15px;
+}
+
+.search-group{
+display:flex;
+gap:10px;
+align-items:center;
+flex-wrap:wrap;
+}
+
+.search-group input[type="text"]{
+flex:1;
+min-width:220px;
+width:auto;
+}
+
+.search-group button{
+white-space:nowrap;
+}
+
+.search-group .back-link{
+margin-bottom:0;
+white-space:nowrap;
+}

@@ -66,6 +66,35 @@
         Registered Examinees
     </h2>
 
+    <!-- NEW: search/filter by Examinee ID or name -->
+    <form method="GET" class="search-form">
+        <div class="search-group">
+            <input
+                type="text"
+                name="q"
+                placeholder="Search by Examinee ID or name..."
+                value="{{ search }}">
+
+            <button type="submit">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                Search
+            </button>
+
+            {% if search %}
+            <a href="{{ url_for('students.students') }}" class="back-link">
+                Clear
+            </a>
+            {% endif %}
+        </div>
+    </form>
+
+    {% if search %}
+    <p class="page-description">
+        Showing results for "<b>{{ search }}</b>"
+        ({{ students|length }} match{{ 'es' if students|length != 1 else '' }})
+    </p>
+    {% endif %}
+
     {% if students %}
 
     <table>
@@ -113,6 +142,10 @@
 
     </table>
 
+    {% elif search %}
+        <div class="message">
+            No examinees match "{{ search }}".
+        </div>
     {% else %}
         <div class="message">
             No examinees have been registered yet.

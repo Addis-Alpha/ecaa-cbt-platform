@@ -15,6 +15,13 @@
         Create, update and manage examinations available in the CBT system.
     </p>
 
+    <p>
+        <a href="{{ url_for('questions.search_questions') }}">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            Search Questions Across All Examinations
+        </a>
+    </p>
+
     <hr>
 
     <form method="POST">
@@ -82,6 +89,35 @@
         Available Examinations
     </h2>
 
+    <!-- NEW: search/filter by exam code or title -->
+    <form method="GET" class="search-form">
+        <div class="search-group">
+            <input
+                type="text"
+                name="q"
+                placeholder="Search by exam code or title..."
+                value="{{ search }}">
+
+            <button type="submit">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                Search
+            </button>
+
+            {% if search %}
+            <a href="{{ url_for('exams.exams') }}" class="back-link">
+                Clear
+            </a>
+            {% endif %}
+        </div>
+    </form>
+
+    {% if search %}
+    <p class="page-description">
+        Showing results for "<b>{{ search }}</b>"
+        ({{ exams|length }} match{{ 'es' if exams|length != 1 else '' }})
+    </p>
+    {% endif %}
+
     {% if exams %}
     <table>
 
@@ -147,6 +183,10 @@
 
     </table>
 
+    {% elif search %}
+    <div class="message">
+        No examinations match "{{ search }}".
+    </div>
     {% else %}
     <div class="message">
         No examinations have been created yet.

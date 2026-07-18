@@ -5,6 +5,7 @@ from flask import (
     redirect,
     url_for,
     flash,
+    abort,
 )
 
 from flask_login import (
@@ -37,7 +38,7 @@ exams_bp = Blueprint(
 def exams():
 
     if current_user.role != "admin":
-        return "Access denied", 403
+        abort(403)
 
     if request.method == "POST":
 
@@ -93,13 +94,35 @@ def exams():
                 )
             )
 
-    exams = Exam.query.order_by(
+    # NEW: search/filter exams by code or title.
+    # GET /exams?q=keyword -- case-insensitive, matches either field.
+    # Empty/omitted "q" behaves exactly as before (full list).
+    search = request.args.get(
+        "q",
+        ""
+    ).strip()
+
+    query = Exam.query
+
+    if search:
+
+        like = f"%{search}%"
+
+        query = query.filter(
+            db.or_(
+                Exam.code.ilike(like),
+                Exam.title.ilike(like),
+            )
+        )
+
+    exams = query.order_by(
         Exam.code.asc()
     ).all()
 
     return render_template(
         "exams.html",
         exams=exams,
+        search=search,
     )
 
 
@@ -115,7 +138,7 @@ def exams():
 def edit_exam(id):
 
     if current_user.role != "admin":
-        return "Access denied", 403
+        abort(403)
 
     exam = Exam.query.get_or_404(id)
 
@@ -193,7 +216,7 @@ def edit_exam(id):
 def delete_exam(id):
 
     if current_user.role != "admin":
-        return "Access denied", 403
+        abort(403)
 
     exam = Exam.query.get_or_404(id)
 
