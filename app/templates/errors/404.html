@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Page Not Found
+{% endblock %}
+
+{% block content %}
+<div class="card error-card">
+
+    <i class="fa-solid fa-magnifying-glass error-icon"></i>
+
+    <h1>
+        404 — Page Not Found
+    </h1>
+
+    <p>
+        The page you are looking for doesn't exist, may have been
+        moved, or the link you followed is incorrect.
+    </p>
+
+    {% if current_user.is_authenticated %}
+
+        {% if current_user.role == "admin" %}
+        <a href="{{ url_for('admin.dashboard') }}" class="btn-error-return">
+            <i class="fa-solid fa-house"></i>
+            Back to Dashboard
+        </a>
+        {% else %}
+        <a href="{{ url_for('student.student_dashboard') }}" class="btn-error-return">
+            <i class="fa-solid fa-house"></i>
+            Back to Dashboard
+        </a>
+        {% endif %}
+
+    {% else %}
+    <a href="{{ url_for('auth.login') }}" class="btn-error-return">
+        <i class="fa-solid fa-right-to-bracket"></i>
+        Back to Login
+    </a>
+    {% endif %}
+
+</div>
+{% endblock %}

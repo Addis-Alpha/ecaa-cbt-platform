@@ -6,7 +6,8 @@ from flask import (
     url_for,
     session,
     flash,
-    make_response
+    make_response,
+    abort
 )
 
 from flask_login import (
@@ -257,7 +258,7 @@ def start_exam(id):
     # ------------------------------------
 
     if current_user.role != "student":
-        return "Access denied"
+        abort(403)
 
     # ------------------------------------
     # Load exam

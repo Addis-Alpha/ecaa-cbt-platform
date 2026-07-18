@@ -63,6 +63,7 @@ def create_app():
     from app.routes.assignments import assignments_bp
     from app.routes.results import results_bp
     from app.routes.exam_session import exam_session_bp
+    from app.routes.errors import errors_bp
 
     # -------------------------
     # Register blueprints
@@ -77,5 +78,6 @@ def create_app():
     app.register_blueprint(assignments_bp)
     app.register_blueprint(results_bp)
     app.register_blueprint(exam_session_bp)
+    app.register_blueprint(errors_bp)
 
     return app

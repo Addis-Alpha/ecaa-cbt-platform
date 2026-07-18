@@ -5,6 +5,7 @@ from flask import (
     redirect,
     url_for,
     flash,
+    abort,
 )
 
 from flask_login import (
@@ -38,7 +39,7 @@ assignments_bp = Blueprint(
 def assign_exam():
 
     if current_user.role != "admin":
-        return "Access denied", 403
+        abort(403)
 
     if request.method == "POST":
 
@@ -120,7 +121,7 @@ def assign_exam():
 def manage_assignments():
 
     if current_user.role != "admin":
-        return "Access denied", 403
+        abort(403)
 
     # Assignment only stores student_id / exam_id (no ORM
     # relationships defined), so join explicitly to display names
@@ -184,7 +185,7 @@ def manage_assignments():
 def remove_assignment(id):
 
     if current_user.role != "admin":
-        return "Access denied", 403
+        abort(403)
 
     assignment = Assignment.query.get_or_404(id)
 
@@ -227,13 +228,14 @@ def remove_assignment(id):
 
         flash(
             "Assignment removed and score record deleted. "
-            "The student can be reassigned to this exam."
+            "The student can be reassigned this exam."
         )
 
     else:
 
         flash(
-            "Assignment removed. The student can be reassigned to this exam"
+            "Assignment removed. The student can be reassigned "
+            "this exam."
         )
 
     return redirect(

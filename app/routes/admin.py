@@ -1,4 +1,4 @@
-from flask import (Blueprint, render_template)
+from flask import (Blueprint, render_template, abort)
 from flask_login import (login_required, current_user)
 from app.logger import app_logger
 
@@ -17,7 +17,7 @@ admin_bp = Blueprint(
 def dashboard():
 
     if current_user.role != "admin":
-        return "Access denied", 403
+        abort(403)
 
     app_logger.info(
         f"ADMIN DASHBOARD | "

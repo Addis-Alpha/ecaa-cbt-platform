@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Access Denied
+{% endblock %}
+
+{% block content %}
+<div class="card error-card error-danger">
+
+    <i class="fa-solid fa-lock error-icon"></i>
+
+    <h1>
+        403 — Access Denied
+    </h1>
+
+    <p>
+        You do not have permission to view this page. If you believe
+        this is a mistake, please contact your administrator.
+    </p>
+
+    {% if current_user.is_authenticated %}
+
+        {% if current_user.role == "admin" %}
+        <a href="{{ url_for('admin.dashboard') }}" class="btn-error-return">
+            <i class="fa-solid fa-house"></i>
+            Back to Dashboard
+        </a>
+        {% else %}
+        <a href="{{ url_for('student.student_dashboard') }}" class="btn-error-return">
+            <i class="fa-solid fa-house"></i>
+            Back to Dashboard
+        </a>
+        {% endif %}
+
+    {% else %}
+    <a href="{{ url_for('auth.login') }}" class="btn-error-return">
+        <i class="fa-solid fa-right-to-bracket"></i>
+        Back to Login
+    </a>
+    {% endif %}
+
+</div>
+{% endblock %}

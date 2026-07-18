@@ -484,3 +484,68 @@ padding:20px;
     height:12px;
     background:#0d6efd;
 }
+
+/* ==========================
+   ERROR PAGES (404 / 403 / 500)
+========================== */
+
+.error-card{
+text-align:center;
+padding:60px 30px;
+max-width:600px;
+margin:20px auto;
+}
+
+.error-icon{
+font-size:4rem;
+color:#0b3d91;
+margin-bottom:20px;
+display:block;
+}
+
+.error-card h1{
+color:#0b3d91;
+margin-bottom:15px;
+font-size:26px;
+}
+
+.error-card p{
+color:#666;
+line-height:1.6;
+margin-bottom:30px;
+}
+
+.btn-error-return{
+display:inline-block;
+padding:12px 26px;
+background:#0b3d91;
+color:white;
+border-radius:6px;
+text-decoration:none;
+font-weight:bold;
+transition:.2s;
+}
+
+.btn-error-return:hover{
+background:#2563eb;
+}
+
+.btn-error-return i{
+margin-right:8px;
+}
+
+/* 403 and 500 use the danger palette (matches .fail) since they
+   represent something blocked or broken, as opposed to 404's neutral
+   "not found" tone. */
+.error-card.error-danger .error-icon,
+.error-card.error-danger h1{
+color:#991b1b;
+}
+
+.error-card.error-danger .btn-error-return{
+background:#991b1b;
+}
+
+.error-card.error-danger .btn-error-return:hover{
+background:#7f1d1d;
+}

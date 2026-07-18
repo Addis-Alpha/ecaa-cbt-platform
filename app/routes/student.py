@@ -2,6 +2,7 @@ from flask import (
     Blueprint,
     render_template,
     session,
+    abort,
 )
 
 from flask_login import (
@@ -29,7 +30,7 @@ student_bp = Blueprint(
 def student_dashboard():
 
     if current_user.role != "student":
-        return "Access denied", 403
+        abort(403)
 
     # NEW: completed assignments are now deleted automatically the
     # moment the exam is finished (see exam_session.py:save_attempt),
