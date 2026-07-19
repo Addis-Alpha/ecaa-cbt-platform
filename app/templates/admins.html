@@ -61,7 +61,7 @@
                     type="checkbox"
                     name="is_super_admin"
                     class="checkbox-large">
-                <b>Grant Super Admin privileges (can manage other admins)</b>
+                Grant Super Admin privileges (can manage other admins)
             </label>
         </div>
 
@@ -71,9 +71,8 @@
         </button>
 
     </form>
-</div>
 
-<div class="card">
+    <hr>
 
     <h2>
         Registered Admins
@@ -158,4 +157,132 @@
     </a>
 
 </div>
+
+<div class="card">
+
+    <h2>
+        <i class="fa-solid fa-database"></i>
+        Database Backup &amp; Restore
+    </h2>
+
+    <p>
+        Download a full backup of the database, or restore from a
+        previous backup file. Both require PostgreSQL's
+        <code>pg_dump</code>/<code>pg_restore</code> tools to be
+        installed and on the system PATH where this app is running.
+    </p>
+
+    <a
+        href="{{ url_for('admins.download_backup') }}"
+        class="btn-download-backup">
+        <i class="fa-solid fa-download"></i>
+        Download Backup
+    </a>
+
+    <hr>
+
+    <h3>
+        Restore from Backup
+    </h3>
+
+    <div class="message forced-change-notice">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <b>Warning:</b> restoring completely replaces all current
+        data with the contents of the uploaded backup file. This
+        cannot be undone. Everyone currently signed in &mdash;
+        including you &mdash; will need to sign in again afterward,
+        and the application should be restarted once the restore
+        completes. Only proceed if you're certain, and consider
+        downloading a fresh backup first.
+    </div>
+
+    <form
+        method="POST"
+        action="{{ url_for('admins.restore_backup') }}"
+        enctype="multipart/form-data"
+        onsubmit="return confirm('This will REPLACE ALL current data with the uploaded backup. This cannot be undone. Are you absolutely sure?');">
+
+        <div class="form-group">
+            <label>
+                Backup File (.backup)
+            </label>
+
+            <input
+                type="file"
+                name="backup_file"
+                accept=".backup,.dump"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label>
+                Type RESTORE (all caps) to confirm
+            </label>
+
+            <input
+                type="text"
+                name="confirm_text"
+                placeholder="RESTORE"
+                autocomplete="off"
+                required>
+        </div>
+
+        <button type="submit" class="btn-restore-danger">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            Restore Database
+        </button>
+
+    </form>
+
+</div>
+
+<style>
+    /* Scoped to this page: makes the super-admin checkbox bigger and
+       sits it inline with its label, same pattern as the checkbox on
+       the manage-assignments page. */
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: normal;
+        cursor: pointer;
+    }
+
+    .checkbox-large {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: #0b3d91;
+    }
+
+    .btn-download-backup {
+        display: inline-block;
+        padding: 10px 18px;
+        background: #0b3d91;
+        color: white;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    .btn-download-backup:hover {
+        background: #2563eb;
+    }
+
+    .btn-restore-danger {
+        background: #991b1b;
+    }
+
+    .btn-restore-danger:hover {
+        background: #7f1d1d;
+    }
+
+    /* Reuses the same red notice style as change_password.html's
+       forced-change banner. */
+    .forced-change-notice {
+        background: #fee2e2;
+        border-left-color: #991b1b;
+        color: #991b1b;
+    }
+</style>
 {% endblock %}

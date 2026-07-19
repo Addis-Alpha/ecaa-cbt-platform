@@ -1,3 +1,9 @@
+import io
+import os
+import subprocess
+import tempfile
+from datetime import datetime
+
 from flask import (
     Blueprint,
     render_template,
@@ -6,6 +12,7 @@ from flask import (
     url_for,
     flash,
     abort,
+    send_file,
 )
 
 from flask_login import (
@@ -336,4 +343,257 @@ def delete_admin(id):
         url_for(
             "admins.admins"
         )
+    )
+
+
+# ==========================
+# DATABASE BACKUP
+# ==========================
+#
+# Shells out to pg_dump (bundled with any standard PostgreSQL
+# install, including pgAdmin4's) using the same DB_* environment
+# variables config.py already reads -- no separate connection config
+# to keep in sync. Uses custom format (-Fc): compressed, and the
+# standard format for pg_restore. The dump is captured entirely in
+# memory rather than written to a temp file on disk, so there's
+# nothing left behind to clean up -- fine for a database this size;
+# for a very large database this would need rethinking (streaming to
+# disk instead), but that's not a concern at this scale.
+
+@admins_bp.route(
+    "/admins/backup",
+    methods=["GET"],
+)
+@login_required
+def download_backup():
+
+    require_super_admin()
+
+    db_env = os.environ.copy()
+    db_env["PGPASSWORD"] = os.getenv("DB_PASSWORD", "")
+
+    command = [
+        "pg_dump",
+        "-h", os.getenv("DB_HOST", ""),
+        "-p", os.getenv("DB_PORT", ""),
+        "-U", os.getenv("DB_USER", ""),
+        "-Fc",
+        os.getenv("DB_NAME", ""),
+    ]
+
+    try:
+
+        result = subprocess.run(
+            command,
+            env=db_env,
+            capture_output=True,
+            timeout=300,
+        )
+
+    except FileNotFoundError:
+
+        flash(
+            "pg_dump was not found. Make sure PostgreSQL's bin "
+            "folder is on the system PATH where this app is running."
+        )
+
+        return redirect(
+            url_for("admins.admins")
+        )
+
+    if result.returncode != 0:
+
+        error_message = result.stderr.decode(errors="replace")
+
+        security_logger.warning(
+            f"DATABASE BACKUP FAILED | "
+            f"By={current_user.username} | "
+            f"Error={error_message[:500]}"
+        )
+
+        flash(
+            "Backup failed. Check the application error log for "
+            "details."
+        )
+
+        return redirect(
+            url_for("admins.admins")
+        )
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"ecaa_cbt_backup_{timestamp}.backup"
+
+    buffer = io.BytesIO(result.stdout)
+    buffer.seek(0)
+
+    security_logger.warning(
+        f"DATABASE BACKUP DOWNLOADED | "
+        f"By={current_user.username}"
+    )
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=filename,
+        mimetype="application/octet-stream",
+    )
+
+
+# ==========================
+# DATABASE RESTORE
+# ==========================
+#
+# DESTRUCTIVE. Completely replaces all current data with the contents
+# of the uploaded backup file. Guarded by three layers: super-admin
+# only, a typed "RESTORE" confirmation, and a JS confirm() dialog on
+# the form itself (see admins.html). Uses pg_restore --clean
+# --if-exists so the restore reliably overwrites existing objects
+# rather than erroring out on "already exists" conflicts.
+#
+# IMPORTANT FOR THE ADMIN DOING THIS: restoring drops and recreates
+# every table, including the user table -- this invalidates every
+# active session app-wide, including the super admin's own. Restart
+# the application afterward and expect to sign in again.
+
+@admins_bp.route(
+    "/admins/restore",
+    methods=["POST"],
+)
+@login_required
+def restore_backup():
+
+    require_super_admin()
+
+    confirmation = request.form.get(
+        "confirm_text",
+        ""
+    ).strip()
+
+    if confirmation != "RESTORE":
+
+        flash(
+            'You must type "RESTORE" exactly to confirm this action.'
+        )
+
+        return redirect(
+            url_for("admins.admins")
+        )
+
+    uploaded_file = request.files.get("backup_file")
+
+    if not uploaded_file or uploaded_file.filename == "":
+
+        flash(
+            "Please choose a backup file to restore."
+        )
+
+        return redirect(
+            url_for("admins.admins")
+        )
+
+    file_bytes = uploaded_file.read()
+
+    # Custom-format pg_dump files always start with this magic
+    # signature -- checking it catches an obviously wrong file (e.g.
+    # a plain .sql export, or an unrelated file) with a clear message
+    # instead of a cryptic pg_restore failure.
+    if not file_bytes.startswith(b"PGDMP"):
+
+        flash(
+            "This doesn't look like a valid PostgreSQL custom-format "
+            "backup file. Use a file created by this page's "
+            "\"Download Backup\" button."
+        )
+
+        return redirect(
+            url_for("admins.admins")
+        )
+
+    db_env = os.environ.copy()
+    db_env["PGPASSWORD"] = os.getenv("DB_PASSWORD", "")
+
+    tmp_path = None
+
+    try:
+
+        fd, tmp_path = tempfile.mkstemp(suffix=".backup")
+
+        with os.fdopen(fd, "wb") as tmp_file:
+            tmp_file.write(file_bytes)
+
+        command = [
+            "pg_restore",
+            "-h", os.getenv("DB_HOST", ""),
+            "-p", os.getenv("DB_PORT", ""),
+            "-U", os.getenv("DB_USER", ""),
+            "-d", os.getenv("DB_NAME", ""),
+            "--clean",
+            "--if-exists",
+            "--no-owner",
+            "--no-privileges",
+            tmp_path,
+        ]
+
+        result = subprocess.run(
+            command,
+            env=db_env,
+            capture_output=True,
+            timeout=600,
+        )
+
+    except FileNotFoundError:
+
+        flash(
+            "pg_restore was not found. Make sure PostgreSQL's bin "
+            "folder is on the system PATH where this app is running."
+        )
+
+        return redirect(
+            url_for("admins.admins")
+        )
+
+    finally:
+
+        if tmp_path and os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+    if result.returncode != 0:
+
+        error_message = result.stderr.decode(errors="replace")
+
+        security_logger.warning(
+            f"DATABASE RESTORE FAILED OR HAD WARNINGS | "
+            f"By={current_user.username} | "
+            f"Error={error_message[:1000]}"
+        )
+
+        # pg_restore with --clean commonly reports a non-zero exit
+        # even when the restore substantially succeeded (e.g.
+        # "does not exist, skipping" for objects it tried to drop
+        # that weren't there). Showing the actual output rather than
+        # a flat "failed" message lets the admin judge for themselves
+        # instead of assuming data loss when it may just be noise.
+        flash(
+            "pg_restore reported errors or warnings. This does NOT "
+            "necessarily mean the restore failed -- check the "
+            "application error log for the full output, then verify "
+            "your data before assuming something is wrong."
+        )
+
+        return redirect(
+            url_for("admins.admins")
+        )
+
+    security_logger.warning(
+        f"DATABASE RESTORED FROM BACKUP | "
+        f"By={current_user.username}"
+    )
+
+    flash(
+        "Database restored successfully. Restart the application "
+        "now -- everyone, including you, will need to sign in again."
+    )
+
+    return redirect(
+        url_for("admins.admins")
     )
