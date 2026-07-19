@@ -1,7 +1,8 @@
 from flask import (Blueprint, render_template, request, redirect, url_for, flash, session)
 from flask_login import (login_user, logout_user, login_required, current_user)
-from werkzeug.security import (check_password_hash)
+from werkzeug.security import (check_password_hash, generate_password_hash)
 
+from app.extensions import db
 from app.models.user import User
 from app.logger import app_logger, security_logger
 
@@ -126,4 +127,107 @@ def logout():
         url_for(
             "auth.login"
         )
+    )
+
+
+# ==========================
+# CHANGE PASSWORD
+# ==========================
+#
+# Reachable by any signed-in user at any time to change their own
+# password. Also the ONE page a must_change_password account is
+# allowed to reach (see the before_request hook in app/__init__.py) --
+# used to force the default admin off its fixed starting password.
+
+@auth.route("/change-password", methods=["GET", "POST"])
+@login_required
+def change_password():
+
+    if request.method == "POST":
+
+        current_password = request.form.get(
+            "current_password",
+            ""
+        )
+
+        new_password = request.form.get(
+            "new_password",
+            ""
+        )
+
+        confirm_password = request.form.get(
+            "confirm_password",
+            ""
+        )
+
+        if not check_password_hash(current_user.password, current_password):
+
+            flash(
+                "Current password is incorrect."
+            )
+
+            return redirect(
+                url_for("auth.change_password")
+            )
+
+        if len(new_password) < 8:
+
+            flash(
+                "New password must be at least 8 characters long."
+            )
+
+            return redirect(
+                url_for("auth.change_password")
+            )
+
+        if new_password != confirm_password:
+
+            flash(
+                "New password and confirmation do not match."
+            )
+
+            return redirect(
+                url_for("auth.change_password")
+            )
+
+        if check_password_hash(current_user.password, new_password):
+
+            flash(
+                "New password must be different from your current "
+                "password."
+            )
+
+            return redirect(
+                url_for("auth.change_password")
+            )
+
+        current_user.password = generate_password_hash(new_password)
+        current_user.must_change_password = False
+
+        db.session.commit()
+
+        security_logger.warning(
+            f"PASSWORD CHANGED | "
+            f"User={current_user.username or current_user.student_id} | "
+            f"IP={request.remote_addr}"
+        )
+
+        flash(
+            "Password changed successfully."
+        )
+
+        if current_user.role == "admin":
+
+            return redirect(
+                url_for("admin.dashboard")
+            )
+
+        else:
+
+            return redirect(
+                url_for("student.student_dashboard")
+            )
+
+    return render_template(
+        "change_password.html"
     )

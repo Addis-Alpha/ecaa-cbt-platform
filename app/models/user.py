@@ -62,6 +62,18 @@ class User(
         default=False
     )
 
+    # NEW: forces a password change on next login. Set True for the
+    # auto-created default admin (see app/seed.py) since it starts
+    # with a fixed, publicly-known password. Cleared automatically
+    # once the user successfully changes their password (see
+    # auth.py:change_password). Enforced app-wide by a before_request
+    # hook in app/__init__.py -- while this is True, every page except
+    # the change-password page itself redirects back to it.
+    must_change_password = db.Column(
+        db.Boolean,
+        default=False
+    )
+
     assignments = db.relationship(
         "Assignment",
         back_populates="student",

@@ -214,6 +214,55 @@ const button = document.getElementById("submitBtn");
 
 
 // ----------------------------
+// Keep screen awake during the exam
+// ----------------------------
+//
+// Uses the Screen Wake Lock API to stop the device from sleeping/
+// dimming while an exam is in progress -- a screen lock mid-exam
+// could otherwise cost a student time against the timer, or in the
+// worst case leave them locked out mid-attempt.
+//
+// Not supported in every browser (notably older Safari) -- this
+// fails silently in that case rather than breaking anything; the
+// exam works exactly the same either way, just without this extra
+// protection on unsupported browsers.
+
+let wakeLock = null;
+
+async function requestWakeLock() {
+
+    if (!("wakeLock" in navigator)) {
+        return;
+    }
+
+    try {
+
+        wakeLock = await navigator.wakeLock.request("screen");
+
+    } catch (err) {
+
+        // Permission denied, battery saver mode, etc. -- exam
+        // continues normally without the wake lock.
+        wakeLock = null;
+
+    }
+}
+
+requestWakeLock();
+
+// The Wake Lock is automatically released by the browser whenever
+// the tab is hidden/minimized (e.g. switching apps briefly). Re-
+// request it as soon as the student comes back to the exam tab.
+document.addEventListener("visibilitychange", function () {
+
+    if (wakeLock !== null && document.visibilityState === "visible") {
+        requestWakeLock();
+    }
+
+});
+
+
+// ----------------------------
 // Timer
 // ----------------------------
 
@@ -263,6 +312,11 @@ form.addEventListener("submit", function (event) {
 
     button.disabled = true;
 
+    if (wakeLock !== null) {
+        wakeLock.release().catch(function () {});
+        wakeLock = null;
+    }
+
 });
 
 
@@ -277,6 +331,11 @@ function submitExam() {
         submitted = true;
 
         button.disabled = true;
+
+        if (wakeLock !== null) {
+            wakeLock.release().catch(function () {});
+            wakeLock = null;
+        }
 
         form.submit();
 

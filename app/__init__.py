@@ -1,4 +1,6 @@
-from flask import Flask
+from flask import Flask, request, redirect, url_for
+
+from flask_login import current_user
 
 from config import Config
 
@@ -48,7 +50,15 @@ def create_app():
     from app.models.attempt import Attempt
 
     with app.app_context():
+
         db.create_all()
+
+        # NEW: on a brand new/empty database, this creates a default
+        # admin account so the app is never left with no way to log
+        # in at all. No-op if any admin already exists (see
+        # app/seed.py for details).
+        from app.seed import seed_default_admin
+        seed_default_admin()
 
     # -------------------------
     # Import blueprints
@@ -81,5 +91,44 @@ def create_app():
     app.register_blueprint(exam_session_bp)
     app.register_blueprint(errors_bp)
     app.register_blueprint(admins_bp)
+
+    # -------------------------
+    # Force password change when required
+    # -------------------------
+    #
+    # NEW: while a user's must_change_password flag is True (set for
+    # the auto-created default admin -- see app/seed.py), every page
+    # except the change-password page itself, logout, and static
+    # assets redirects back to the change-password page. This runs on
+    # every request, so there's no way to route around it once signed
+    # in with such an account.
+
+    @app.before_request
+    def enforce_password_change():
+
+        if not current_user.is_authenticated:
+            return
+
+        if not getattr(current_user, "must_change_password", False):
+            return
+
+        # request.endpoint is None for URLs that don't match any
+        # route at all (a genuine 404) -- let that fall through to
+        # normal 404 handling instead of redirecting.
+        if request.endpoint is None:
+            return
+
+        allowed_endpoints = {
+            "auth.change_password",
+            "auth.logout",
+            "static",
+        }
+
+        if request.endpoint in allowed_endpoints:
+            return
+
+        return redirect(
+            url_for("auth.change_password")
+        )
 
     return app
