@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}
+
+Edit Admin
+
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+<h1>
+
+Edit Admin
+
+</h1>
+
+<p>
+
+Update the admin account below.
+
+</p>
+
+<a
+class="back-link"
+href="{{ url_for('admins.admins') }}">
+
+<i class="fa-solid fa-arrow-left"></i>
+
+Back to Admins
+
+</a>
+
+<hr>
+
+<form method="POST">
+
+<div class="form-group">
+
+<label>
+
+Username
+
+</label>
+
+<input
+name="username"
+value="{{ admin.username }}"
+required>
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+Full Name
+
+</label>
+
+<input
+name="full_name"
+value="{{ admin.full_name }}"
+required>
+
+</div>
+
+<div class="form-group">
+
+<label class="checkbox-label">
+
+<input
+    type="checkbox"
+    name="is_super_admin"
+    class="checkbox-large"
+    {% if admin.is_super_admin %}checked{% endif %}>
+
+Grant Super Admin privileges (can manage other admins)
+
+</label>
+
+{% if admin.id == current_user.id %}
+<p class="page-description">
+    This is your own account. If you're the only super admin, you
+    won't be able to uncheck this box -- promote another admin first.
+</p>
+{% endif %}
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+New Password
+
+</label>
+
+<input
+type="password"
+name="password"
+placeholder="Leave blank to keep the current password">
+
+<p class="page-description">
+Leave the password field empty if you do not want to change the current password.
+</p>
+
+</div>
+
+<button type="submit">
+<i class="fa-solid fa-floppy-disk"></i>
+Update Admin
+
+</button>
+
+</form>
+
+</div>
+
+<style>
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: normal;
+        cursor: pointer;
+    }
+
+    .checkbox-large {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: #0b3d91;
+    }
+</style>
+
+{% endblock %}

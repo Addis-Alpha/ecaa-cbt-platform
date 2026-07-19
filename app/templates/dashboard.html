@@ -78,6 +78,23 @@
         <b>View Results</b>
       </a>
     </div>
+
+    {% if current_user.is_super_admin %}
+    <div class="dashboard-card">
+      <h2>
+        <i class="fa-solid fa-user-shield"></i>
+        Admin Accounts
+      </h2>
+
+      <p>
+        Create and manage administrator accounts. Super admin only.
+      </p>
+
+      <a href="{{ url_for('admins.admins') }}">
+        <b>Manage Admins</b>
+      </a>
+    </div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

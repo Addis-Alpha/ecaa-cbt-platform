@@ -43,11 +43,22 @@
                 Password
             </label>
 
-            <input
-                type="password"
-                name="password"
-                placeholder="Enter your password"
-                required>
+            <div class="password-wrapper">
+                <input
+                    type="password"
+                    name="password"
+                    id="passwordInput"
+                    placeholder="Enter your password"
+                    required>
+
+                <button
+                    type="button"
+                    class="toggle-password"
+                    onclick="togglePasswordVisibility()"
+                    aria-label="Show password">
+                    <i class="fa-solid fa-eye" id="togglePasswordIcon"></i>
+                </button>
+            </div>
         </div>
 
         <button
@@ -56,4 +67,62 @@
         </button>
     </form>
 </div>
+
+<style>
+    /* Scoped to the login page. Positions the eye-icon button inside
+       the password field's right edge without altering .form-group
+       or the site-wide input styling. */
+    .password-wrapper {
+        position: relative;
+    }
+
+    .password-wrapper input {
+        padding-right: 42px;
+    }
+
+    .toggle-password {
+        position: absolute;
+        top: 50%;
+        right: 10px;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        padding: 4px;
+        margin: 0;
+        color: #666;
+        cursor: pointer;
+        font-size: 16px;
+        line-height: 1;
+    }
+
+    .toggle-password:hover {
+        color: #0b3d91;
+        background: none;
+    }
+</style>
+
+<script>
+    function togglePasswordVisibility() {
+
+        const input = document.getElementById("passwordInput");
+        const icon = document.getElementById("togglePasswordIcon");
+        const button = document.querySelector(".toggle-password");
+
+        if (input.type === "password") {
+
+            input.type = "text";
+            icon.classList.remove("fa-eye");
+            icon.classList.add("fa-eye-slash");
+            button.setAttribute("aria-label", "Hide password");
+
+        } else {
+
+            input.type = "password";
+            icon.classList.remove("fa-eye-slash");
+            icon.classList.add("fa-eye");
+            button.setAttribute("aria-label", "Show password");
+
+        }
+    }
+</script>
 {% endblock %}

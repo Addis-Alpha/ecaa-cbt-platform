@@ -51,6 +51,17 @@ class User(
         db.String(200)
     )
 
+    # NEW: distinguishes a super admin (can create/edit/delete other
+    # admin accounts) from a regular admin (everything else -- exams,
+    # questions, examinees, assignments, results -- is unaffected by
+    # this flag, since those checks all just test role == "admin").
+    # Defaults to False so existing admin rows are safe after the
+    # migration; promote the first one manually (see migration file).
+    is_super_admin = db.Column(
+        db.Boolean,
+        default=False
+    )
+
     assignments = db.relationship(
         "Assignment",
         back_populates="student",
