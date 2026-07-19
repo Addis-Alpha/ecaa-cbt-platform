@@ -19,7 +19,10 @@ Examination Result History
     <hr>
 
     <!-- Search/filter by examinee (ID, name, organization, job
-         title) or examination (code, title) -->
+         title) or examination (code, title), plus date range.
+         Both are submitted together in one GET form so they combine
+         (AND logic: text search narrows further by date, and vice
+         versa). -->
     <form method="GET" class="search-form">
         <div class="search-group">
             <input
@@ -28,12 +31,28 @@ Examination Result History
                 placeholder="Search by examinee or exam..."
                 value="{{ search }}">
 
+            <label class="date-filter-label">
+                From
+                <input
+                    type="date"
+                    name="date_from"
+                    value="{{ date_from }}">
+            </label>
+
+            <label class="date-filter-label">
+                To
+                <input
+                    type="date"
+                    name="date_to"
+                    value="{{ date_to }}">
+            </label>
+
             <button type="submit">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                Search
+                Search / Filter
             </button>
 
-            {% if search %}
+            {% if search or date_from or date_to %}
             <a href="{{ url_for('results.results') }}" class="back-link">
                 Clear
             </a>
@@ -44,11 +63,25 @@ Examination Result History
     {% if attempts %}
 
     <p>
-        <b>{{ "Matching Attempts:" if search else "Total Attempts:" }}</b>
+        <b>
+            {{ "Matching Attempts:" if (search or date_from or date_to) else "Total Attempts:" }}
+        </b>
         {{ attempts|length }}
         {% if search %}
         for "<b>{{ search }}</b>"
         {% endif %}
+        {% if date_from or date_to %}
+        ({{ date_from or "the beginning" }} to {{ date_to or "now" }})
+        {% endif %}
+    </p>
+
+    <p>
+        <a
+            href="{{ url_for('results.export_results', q=search, date_from=date_from, date_to=date_to) }}"
+            class="btn-export">
+            <i class="fa-solid fa-file-excel"></i>
+            Export to Excel
+        </a>
     </p>
 
     <table>
@@ -81,6 +114,10 @@ Examination Result History
 
         <th>
             Completed On
+        </th>
+
+        <th>
+            Certificate
         </th>
 
     </tr>
@@ -147,16 +184,28 @@ FAIL
 
 </td>
 
+<td>
+
+<a
+    href="{{ url_for('results.result_certificate', attempt_id=a.id) }}"
+    target="_blank"
+    title="Open PDF certificate in a new tab">
+    <i class="fa-solid fa-file-pdf"></i>
+    PDF
+</a>
+
+</td>
+
 </tr>
 
 {% endfor %}
 
     </table>
 
-{% elif search %}
+{% elif search or date_from or date_to %}
 
     <div class="message">
-        No attempts match "{{ search }}".
+        No attempts match the current search/filter.
     </div>
 
 {% else %}
@@ -177,5 +226,39 @@ FAIL
     </a>
 
 </div>
+
+<style>
+    /* Scoped to this page. Keeps the date inputs compact and inline
+       with the search box rather than stretching to width:100% like
+       the global input style would otherwise force. */
+    .date-filter-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        font-weight: normal;
+        color: #555;
+        white-space: nowrap;
+    }
+
+    .date-filter-label input[type="date"] {
+        width: auto;
+        padding: 8px;
+    }
+
+    .btn-export {
+        display: inline-block;
+        padding: 10px 18px;
+        background: #166534;
+        color: white;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    .btn-export:hover {
+        background: #14532d;
+    }
+</style>
 
 {% endblock %}
