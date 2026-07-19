@@ -61,7 +61,7 @@
                     type="checkbox"
                     name="is_super_admin"
                     class="checkbox-large">
-                Grant Super Admin privileges (can manage other admins)
+                <b>Grant Super Admin privileges (can manage other admins)</b>
             </label>
         </div>
 
@@ -157,24 +157,4 @@
     </a>
 
 </div>
-
-<style>
-    /* Scoped to this page: makes the super-admin checkbox bigger and
-       sits it inline with its label, same pattern as the checkbox on
-       the manage-assignments page. */
-    .checkbox-label {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-weight: normal;
-        cursor: pointer;
-    }
-
-    .checkbox-large {
-        width: 18px;
-        height: 18px;
-        cursor: pointer;
-        accent-color: #0b3d91;
-    }
-</style>
 {% endblock %}
