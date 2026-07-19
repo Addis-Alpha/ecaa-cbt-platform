@@ -15,10 +15,10 @@
         Create, update and manage examinations available in the CBT system.
     </p>
 
-    <p>
+    <p style="text-align: right;">
         <a href="{{ url_for('questions.search_questions') }}">
             <i class="fa-solid fa-magnifying-glass"></i>
-            Search Questions Across All Examinations
+            <b>Search Questions Across All Examinations</b>
         </a>
     </p>
 
@@ -31,6 +31,7 @@
             </label>
 
             <input
+            style="width: 25%;"
             name="code"
             placeholder="Enter Examination Code"
             autocomplete="off"
@@ -43,6 +44,7 @@
             </label>
 
             <input
+            style="width: 25%;"
             name="title"
             placeholder="Enter Examination Title"
             required>
@@ -55,6 +57,7 @@
             </label>
 
             <input
+            style="width: 25%;"
             type="number"
             name="duration"
             placeholder="Duration in Minutes"
@@ -68,6 +71,7 @@
             </label>
 
             <input
+            style="width: 10%;"
             type="number"
             name="pass_mark"
             placeholder="Pass Percentage"
@@ -85,7 +89,7 @@
 
     <hr>
 
-    <h2>
+    <h2 style="text-align: center;">
         Available Examinations
     </h2>
 
@@ -193,6 +197,16 @@
     </div>
 
     {% endif %}
+
+    <hr>
+    <br>
+
+    <a 
+        class="back-link"
+        href="{{ url_for('admin.dashboard') }}">
+        <i class="fa-solid fa-arrow-left"></i>
+        Back to Dashboard
+    </a>
 
 </div>
 {% endblock %}

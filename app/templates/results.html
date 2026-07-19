@@ -18,11 +18,37 @@ Examination Result History
 
     <hr>
 
+    <!-- Search/filter by examinee (ID, name, organization, job
+         title) or examination (code, title) -->
+    <form method="GET" class="search-form">
+        <div class="search-group">
+            <input
+                type="text"
+                name="q"
+                placeholder="Search by examinee or exam..."
+                value="{{ search }}">
+
+            <button type="submit">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                Search
+            </button>
+
+            {% if search %}
+            <a href="{{ url_for('results.results') }}" class="back-link">
+                Clear
+            </a>
+            {% endif %}
+        </div>
+    </form>
+
     {% if attempts %}
 
     <p>
-        <b>Total Attempts:</b>
+        <b>{{ "Matching Attempts:" if search else "Total Attempts:" }}</b>
         {{ attempts|length }}
+        {% if search %}
+        for "<b>{{ search }}</b>"
+        {% endif %}
     </p>
 
     <table>
@@ -126,6 +152,12 @@ FAIL
 {% endfor %}
 
     </table>
+
+{% elif search %}
+
+    <div class="message">
+        No attempts match "{{ search }}".
+    </div>
 
 {% else %}
 

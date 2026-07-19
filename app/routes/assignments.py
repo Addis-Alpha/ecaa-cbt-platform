@@ -123,16 +123,43 @@ def manage_assignments():
     if current_user.role != "admin":
         abort(403)
 
-    # Assignment only stores student_id / exam_id (no ORM
-    # relationships defined), so join explicitly to display names
-    # instead of assuming assignment.student / assignment.exam exist.
-    rows = (
+    # NEW: search/filter by student (ID, name, organization, job
+    # title) or exam (code, title). GET /assignments/manage?q=keyword
+    # -- case-insensitive, matches any of those fields. Applied at the
+    # query level (not after fetching) since Assignment/User/Exam are
+    # already being joined here.
+    search = request.args.get(
+        "q",
+        ""
+    ).strip()
+
+    query = (
         db.session.query(Assignment, User, Exam)
         .join(User, User.id == Assignment.student_id)
         .join(Exam, Exam.id == Assignment.exam_id)
-        .order_by(Assignment.id.desc())
-        .all()
     )
+
+    if search:
+
+        like = f"%{search}%"
+
+        query = query.filter(
+            db.or_(
+                User.student_id.ilike(like),
+                User.full_name.ilike(like),
+                User.organization.ilike(like),
+                User.job_title.ilike(like),
+                Exam.code.ilike(like),
+                Exam.title.ilike(like),
+            )
+        )
+
+    # Assignment only stores student_id / exam_id (no ORM
+    # relationships defined), so join explicitly to display names
+    # instead of assuming assignment.student / assignment.exam exist.
+    rows = query.order_by(
+        Assignment.id.desc()
+    ).all()
 
     # Attempt has no FK back to Assignment either (same pattern as
     # exam_session.py), so look attempts up the same way: by
@@ -174,6 +201,7 @@ def manage_assignments():
     return render_template(
         "manage_assignments.html",
         assignment_rows=assignment_rows,
+        search=search,
     )
 
 

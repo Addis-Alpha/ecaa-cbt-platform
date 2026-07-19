@@ -1,6 +1,8 @@
 from flask import (
     Blueprint,
     render_template,
+    request,
+    abort,
 )
 
 from flask_login import (
@@ -8,7 +10,10 @@ from flask_login import (
     current_user,
 )
 
+from app.extensions import db
 from app.models.attempt import Attempt
+from app.models.user import User
+from app.models.exam import Exam
 from app.logger import app_logger
 
 
@@ -26,13 +31,44 @@ results_bp = Blueprint(
 def results():
 
     if current_user.role != "admin":
-        return "Access denied"
+        abort(403)
 
-    attempts = (
-        Attempt.query
-        .order_by(Attempt.created_at.desc())
-        .all()
-    )
+    # NEW: search/filter by examinee (ID, name, organization, job
+    # title) or examination (code, title).
+    # GET /results?q=keyword -- case-insensitive, matches any of
+    # those fields. Empty/omitted "q" behaves exactly as before (full
+    # list). Joins are only added when actually searching, so the
+    # unfiltered case stays as cheap as it was before.
+    search = request.args.get(
+        "q",
+        ""
+    ).strip()
+
+    query = Attempt.query
+
+    if search:
+
+        like = f"%{search}%"
+
+        query = (
+            query
+            .join(User, User.id == Attempt.student_id)
+            .join(Exam, Exam.id == Attempt.exam_id)
+            .filter(
+                db.or_(
+                    User.student_id.ilike(like),
+                    User.full_name.ilike(like),
+                    User.organization.ilike(like),
+                    User.job_title.ilike(like),
+                    Exam.code.ilike(like),
+                    Exam.title.ilike(like),
+                )
+            )
+        )
+
+    attempts = query.order_by(
+        Attempt.created_at.desc()
+    ).all()
 
     app_logger.info(
         f"RESULTS VIEWED | "
@@ -41,7 +77,8 @@ def results():
 
     return render_template(
         "results.html",
-        attempts=attempts
+        attempts=attempts,
+        search=search,
     )
 
 
@@ -54,7 +91,7 @@ def results():
 def student_results():
 
     if current_user.role != "student":
-        return "Access denied"
+        abort(403)
 
     attempts = (
         Attempt.query

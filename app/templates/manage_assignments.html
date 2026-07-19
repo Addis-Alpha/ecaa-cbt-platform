@@ -11,12 +11,43 @@
     </h1>
 
     <p>
-        <a href="{{ url_for('assignments.assign_exam') }}">
-            <b>Back to Assign Examination</b>
-        </a>
+        Remove an examination assignment. Once removed, the examinee
+        can be assigned that examination again from the
+        <a href="{{ url_for('assignments.assign_exam') }}">Assign Examination</a>
+        page.
     </p>
 
     <hr>
+
+    <!-- Search/filter by examinee (ID, name, organization, job
+         title) or examination (code, title) -->
+    <form method="GET" class="search-form">
+        <div class="search-group">
+            <input
+                type="text"
+                name="q"
+                placeholder="Search by examinee or exam..."
+                value="{{ search }}">
+
+            <button type="submit">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                Search
+            </button>
+
+            {% if search %}
+            <a href="{{ url_for('assignments.manage_assignments') }}" class="back-link">
+                Clear
+            </a>
+            {% endif %}
+        </div>
+    </form>
+
+    {% if search %}
+    <p class="page-description">
+        Showing results for "<b>{{ search }}</b>"
+        ({{ assignment_rows|length }} match{{ 'es' if assignment_rows|length != 1 else '' }})
+    </p>
+    {% endif %}
 
     {% if assignment_rows %}
     <table class="table">
@@ -91,6 +122,10 @@
             {% endfor %}
         </tbody>
     </table>
+    {% elif search %}
+    <div class="message">
+        No assignments match "{{ search }}".
+    </div>
     {% else %}
     <div class="message">
         There are no assignments to manage yet.

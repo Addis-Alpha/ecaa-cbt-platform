@@ -37,6 +37,20 @@ class User(
         db.String(20)
     )
 
+    # NEW: required for examinees (enforced in students.py at the
+    # route level, same pattern as the existing fields above -- none
+    # of them use nullable=False either, they rely on form/route
+    # validation rather than a DB constraint). Nullable at the DB
+    # level on purpose, so this doesn't break on deploy: existing
+    # examinee rows just have NULL here until an admin edits them.
+    organization = db.Column(
+        db.String(200)
+    )
+
+    job_title = db.Column(
+        db.String(200)
+    )
+
     assignments = db.relationship(
         "Assignment",
         back_populates="student",

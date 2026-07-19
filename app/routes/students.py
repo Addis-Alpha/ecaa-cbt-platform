@@ -59,6 +59,32 @@ def students():
             ""
         )
 
+        # NEW: required fields, same as the others -- the model
+        # itself doesn't enforce this at the DB level (nullable),
+        # so it's checked here, consistent with how the rest of this
+        # route already works.
+        organization = request.form.get(
+            "organization",
+            ""
+        ).strip()
+
+        job_title = request.form.get(
+            "job_title",
+            ""
+        ).strip()
+
+        if not organization or not job_title:
+
+            flash(
+                "Organization and Job Title are required."
+            )
+
+            return redirect(
+                url_for(
+                    "students.students"
+                )
+            )
+
         existing = User.query.filter_by(
             student_id=student_id
         ).first()
@@ -77,6 +103,8 @@ def students():
                 full_name=full_name,
                 password=generate_password_hash(password),
                 role="student",
+                organization=organization,
+                job_title=job_title,
             )
 
             db.session.add(student)
@@ -98,7 +126,7 @@ def students():
                 )
             )
 
-    # NEW: search/filter examinees by ID or name.
+    # Search/filter examinees by ID or name.
     # GET /students?q=keyword -- case-insensitive, matches either
     # field. Empty/omitted "q" behaves exactly as before (full list).
     search = request.args.get(
@@ -118,6 +146,8 @@ def students():
             db.or_(
                 User.student_id.ilike(like),
                 User.full_name.ilike(like),
+                User.organization.ilike(like),
+                User.job_title.ilike(like),
             )
         )
 
@@ -155,6 +185,30 @@ def edit_student(id):
             ""
         ).strip()
 
+        # NEW: required, same as create.
+        organization = request.form.get(
+            "organization",
+            ""
+        ).strip()
+
+        job_title = request.form.get(
+            "job_title",
+            ""
+        ).strip()
+
+        if not organization or not job_title:
+
+            flash(
+                "Organization and Job Title are required."
+            )
+
+            return redirect(
+                url_for(
+                    "students.edit_student",
+                    id=id,
+                )
+            )
+
         duplicate = User.query.filter(
             User.student_id == new_student_id,
             User.id != student.id,
@@ -178,6 +232,9 @@ def edit_student(id):
             "full_name",
             ""
         ).strip()
+
+        student.organization = organization
+        student.job_title = job_title
 
         password = request.form.get(
             "password",

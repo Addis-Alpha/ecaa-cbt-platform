@@ -40,6 +40,28 @@
             placeholder="Enter Full Name"
             required>
         </div>
+
+        <div class="form-group">
+            <label>
+                Organization
+            </label>
+
+            <input
+            name="organization"
+            placeholder="Enter Organization"
+            required>
+        </div>
+
+        <div class="form-group">
+            <label>
+                Job Title
+            </label>
+
+            <input
+            name="job_title"
+            placeholder="Enter Job Title"
+            required>
+        </div>
     
         <div class="form-group">
             <label>
@@ -66,13 +88,13 @@
         Registered Examinees
     </h2>
 
-    <!-- NEW: search/filter by Examinee ID or name -->
+    <!-- Search/filter by Examinee ID or name -->
     <form method="GET" class="search-form">
         <div class="search-group">
             <input
                 type="text"
                 name="q"
-                placeholder="Search by Examinee ID or name..."
+                placeholder="Search by ID, name, organization, or job title..."
                 value="{{ search }}">
 
             <button type="submit">
@@ -108,6 +130,14 @@
             </th>
 
             <th>
+                Organization
+            </th>
+
+            <th>
+                Job Title
+            </th>
+
+            <th>
                 Actions
             </th>
 
@@ -121,6 +151,14 @@
 
             <td>
                 {{ s.full_name }}
+            </td>
+
+            <td>
+                {{ s.organization or "—" }}
+            </td>
+
+            <td>
+                {{ s.job_title or "—" }}
             </td>
 
             <td>

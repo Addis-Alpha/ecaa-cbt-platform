@@ -17,7 +17,6 @@
     <a
     class="back-link"
     href="{{ url_for('exams.exams') }}">
-
     ← Back to Examinations
     </a>
 
@@ -89,7 +88,9 @@
                 Correct Answer
             </label>
 
-            <select name="answer">
+            <select 
+                style="width: 10%;"
+                name="answer">
                 <option>A</option>
                 <option>B</option>
                 <option>C</option>
@@ -103,6 +104,7 @@
             </label>
 
             <input
+                style="width: 10%;"
                 type="number"
                 name="marks"
                 value="1"
@@ -217,11 +219,11 @@
     {% endif %}
 
     <hr>
+    <br>
 
     <a
         class="back-link"
         href="{{ url_for('exams.exams') }}">
-
         ← Back to Examinations
     </a>
 </div>

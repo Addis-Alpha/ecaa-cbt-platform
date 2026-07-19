@@ -30,7 +30,9 @@
                 Select Examinee
             </label>
 
-            <select name="student" required>
+            <select 
+                style="width: 30%;""
+                name="student" required>
                 {% for s in students %}
                 <option value="{{ s.id }}">
                     {{ s.student_id }} — {{ s.full_name }}
@@ -44,7 +46,9 @@
                 Select Examination
             </label>
 
-            <select name="exam" required>
+            <select 
+                style="width: 30%;"
+                name="exam" required>
                 {% for e in exams %}
                 <option value="{{ e.id }}">
                     {{ e.code }} — {{ e.title }}
