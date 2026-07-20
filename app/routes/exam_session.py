@@ -286,7 +286,9 @@ def start_exam(id):
     has_active_session = get_order_key(id) in session
 
     if assignment is None and not has_active_session:
-        return "This examination has not been assigned to you."
+        return "Either You have compeleted the Exam or " \
+        "This examination has not been assigned to you. " \
+        "Contact the Exam administrator if you think this is a mistake."
 
     # ------------------------------------
     # Prevent duplicate attempt
