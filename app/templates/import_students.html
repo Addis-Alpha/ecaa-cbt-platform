@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Import Examinees
+{% endblock %}
+
+{% block content %}
+<div class="card">
+
+    <h1>
+        Import Examinees from Excel
+    </h1>
+
+    <p>
+        Bulk-add examinees from an Excel (.xlsx) file. Existing
+        Student IDs are skipped automatically; no existing account is
+        ever changed by an import.
+    </p>
+
+    <p>
+        <a href="{{ url_for('students.download_import_template') }}">
+            <i class="fa-solid fa-download"></i>
+            Download the import template
+        </a>
+    </p>
+
+    <p class="page-description">
+        Columns expected, in order: <b>Student ID</b>,
+        <b>Full Name</b>, <b>Organization</b>, <b>Job Title</b>,
+        <b>Password</b> (optional -- leave blank to auto-generate a
+        temporary password; that account will be required to change
+        it on first login).
+    </p>
+
+    <hr>
+
+    <form method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label>
+                Excel File (.xlsx)
+            </label>
+
+            <input
+                type="file"
+                name="import_file"
+                accept=".xlsx"
+                required>
+        </div>
+
+        <button type="submit">
+            <i class="fa-solid fa-file-import"></i>
+            Import
+        </button>
+    </form>
+
+    <br>
+
+    <a
+        class="back-link"
+        href="{{ url_for('students.students') }}">
+        <i class="fa-solid fa-arrow-left"></i>
+        Back to Examinees
+    </a>
+
+</div>
+
+{% if report %}
+<div class="card">
+
+    <h2>
+        Import Report
+    </h2>
+
+    <p>
+        <b>{{ report.created|length }}</b> created,
+        <b>{{ report.skipped|length }}</b> skipped (duplicate),
+        <b>{{ report.errors|length }}</b> failed.
+    </p>
+
+    {% if report.created %}
+    <h3>
+        Created
+    </h3>
+
+    <table>
+        <tr>
+            <th>Row</th>
+            <th>Student ID</th>
+            <th>Full Name</th>
+            <th>Temporary Password</th>
+        </tr>
+        {% for item in report.created %}
+        <tr>
+            <td>{{ item.row }}</td>
+            <td>{{ item.student_id }}</td>
+            <td>{{ item.full_name }}</td>
+            <td>
+                {% if item.temp_password %}
+                <code>{{ item.temp_password }}</code>
+                <br>
+                <small>Must be changed on first login. This is shown
+                only once -- record it now.</small>
+                {% else %}
+                (password provided in file)
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    {% if report.skipped %}
+    <h3>
+        Skipped (Duplicate Student ID)
+    </h3>
+
+    <table>
+        <tr>
+            <th>Row</th>
+            <th>Student ID</th>
+            <th>Reason</th>
+        </tr>
+        {% for item in report.skipped %}
+        <tr>
+            <td>{{ item.row }}</td>
+            <td>{{ item.student_id }}</td>
+            <td>{{ item.reason }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    {% if report.errors %}
+    <h3>
+        Failed
+    </h3>
+
+    <table>
+        <tr>
+            <th>Row</th>
+            <th>Reason</th>
+        </tr>
+        {% for item in report.errors %}
+        <tr>
+            <td>{{ item.row }}</td>
+            <td>{{ item.reason }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+</div>
+{% endif %}
+
+{% endblock %}

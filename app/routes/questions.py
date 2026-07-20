@@ -1,3 +1,5 @@
+import io
+
 from flask import (
     Blueprint,
     render_template,
@@ -6,12 +8,16 @@ from flask import (
     url_for,
     flash,
     abort,
+    send_file,
 )
 
 from flask_login import (
     login_required,
     current_user,
 )
+
+from openpyxl import Workbook, load_workbook
+from openpyxl.styles import Font, PatternFill, Alignment
 
 from app.extensions import db
 from app.models.exam import Exam
@@ -23,6 +29,17 @@ questions_bp = Blueprint(
     "questions",
     __name__,
 )
+
+# Exact header row expected in the question import file, in order.
+QUESTION_IMPORT_HEADERS = [
+    "Question",
+    "Option A",
+    "Option B",
+    "Option C",
+    "Option D",
+    "Correct Answer",
+    "Marks",
+]
 
 
 # ==========================
@@ -321,4 +338,225 @@ def delete_question(id):
             "questions.exam_questions",
             id=exam_id,
         )
+    )
+
+
+# ==========================
+# DOWNLOAD IMPORT TEMPLATE
+# ==========================
+
+@questions_bp.route(
+    "/exam/<int:id>/questions/import/template",
+    methods=["GET"],
+)
+@login_required
+def download_question_import_template(id):
+
+    if current_user.role != "admin":
+        abort(403)
+
+    # Confirms the exam exists (404s otherwise) even though the
+    # template itself doesn't depend on which exam it's for -- keeps
+    # the URL structure consistent with the rest of this file, and
+    # means the download link on the per-exam page never points at a
+    # nonexistent exam.
+    Exam.query.get_or_404(id)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Questions"
+
+    ws.append(QUESTION_IMPORT_HEADERS)
+
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(
+        start_color="0B3D91",
+        end_color="0B3D91",
+        fill_type="solid",
+    )
+
+    for col_num in range(1, len(QUESTION_IMPORT_HEADERS) + 1):
+
+        cell = ws.cell(row=1, column=col_num)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
+
+    ws.append([
+        "What is the capital of Ethiopia?",
+        "Addis Ababa",
+        "Nairobi",
+        "Cairo",
+        "Lagos",
+        "A",
+        1,
+    ])
+
+    ws.column_dimensions["A"].width = 45
+    for col in ["B", "C", "D", "E"]:
+        ws.column_dimensions[col].width = 22
+    ws.column_dimensions["F"].width = 16
+    ws.column_dimensions["G"].width = 10
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name="question_import_template.xlsx",
+        mimetype=(
+            "application/vnd.openxmlformats-officedocument"
+            ".spreadsheetml.sheet"
+        ),
+    )
+
+
+# ==========================
+# IMPORT QUESTIONS FROM EXCEL
+# ==========================
+#
+# Expected columns, in order: Question, Option A, Option B, Option C,
+# Option D, Correct Answer, Marks.
+#
+# Every field is required for a row to import. Correct Answer must be
+# A/B/C/D (case-insensitive). Marks must be a positive whole number.
+# Invalid rows are skipped with a reason; the rest of the file still
+# imports.
+
+@questions_bp.route(
+    "/exam/<int:id>/questions/import",
+    methods=["GET", "POST"],
+)
+@login_required
+def import_questions(id):
+
+    if current_user.role != "admin":
+        abort(403)
+
+    exam = Exam.query.get_or_404(id)
+
+    if request.method == "GET":
+
+        return render_template(
+            "import_questions.html",
+            exam=exam,
+            report=None,
+        )
+
+    uploaded_file = request.files.get("import_file")
+
+    if not uploaded_file or uploaded_file.filename == "":
+
+        flash(
+            "Please choose an Excel file to import."
+        )
+
+        return redirect(
+            url_for("questions.import_questions", id=id)
+        )
+
+    try:
+
+        wb = load_workbook(uploaded_file, data_only=True)
+        ws = wb.active
+
+    except Exception:
+
+        flash(
+            "Could not read that file. Make sure it's a valid "
+            ".xlsx file, ideally based on the downloadable template."
+        )
+
+        return redirect(
+            url_for("questions.import_questions", id=id)
+        )
+
+    report = {
+        "created": [],
+        "errors": [],
+    }
+
+    rows = list(ws.iter_rows(min_row=2, values_only=True))
+
+    for row_number, row in enumerate(rows, start=2):
+
+        if row is None or all(cell in (None, "") for cell in row):
+            continue
+
+        question_text = str(row[0]).strip() if len(row) > 0 and row[0] is not None else ""
+        option_a = str(row[1]).strip() if len(row) > 1 and row[1] is not None else ""
+        option_b = str(row[2]).strip() if len(row) > 2 and row[2] is not None else ""
+        option_c = str(row[3]).strip() if len(row) > 3 and row[3] is not None else ""
+        option_d = str(row[4]).strip() if len(row) > 4 and row[4] is not None else ""
+        raw_answer = str(row[5]).strip().upper() if len(row) > 5 and row[5] is not None else ""
+        raw_marks = row[6] if len(row) > 6 else None
+
+        if not all([question_text, option_a, option_b, option_c, option_d]):
+
+            report["errors"].append({
+                "row": row_number,
+                "reason": "Question text and all four options are required.",
+            })
+
+            continue
+
+        if raw_answer not in ["A", "B", "C", "D"]:
+
+            report["errors"].append({
+                "row": row_number,
+                "reason": f"Correct Answer must be A, B, C or D (got '{raw_answer}').",
+            })
+
+            continue
+
+        try:
+
+            marks = int(raw_marks)
+
+            if marks < 1:
+                raise ValueError
+
+        except (TypeError, ValueError):
+
+            report["errors"].append({
+                "row": row_number,
+                "reason": f"Marks must be a positive whole number (got '{raw_marks}').",
+            })
+
+            continue
+
+        question = Question(
+            exam_id=id,
+            question_text=question_text,
+            option_a=option_a,
+            option_b=option_b,
+            option_c=option_c,
+            option_d=option_d,
+            correct_answer=raw_answer,
+            marks=marks,
+        )
+
+        db.session.add(question)
+
+        report["created"].append({
+            "row": row_number,
+            "question_text": question_text,
+        })
+
+    db.session.commit()
+
+    app_logger.info(
+        f"QUESTION IMPORT | "
+        f"Exam={exam.code} | "
+        f"Created={len(report['created'])} | "
+        f"Errors={len(report['errors'])} | "
+        f"By={current_user.username}"
+    )
+
+    return render_template(
+        "import_questions.html",
+        exam=exam,
+        report=report,
     )

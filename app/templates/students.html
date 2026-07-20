@@ -83,12 +83,17 @@
     </form>
 
     <hr>
-</div>
 
-<div class="card">
-    <h2 style="text-align: center;">
+    <h2>
         Registered Examinees
     </h2>
+
+    <p>
+        <a href="{{ url_for('students.import_students') }}">
+            <i class="fa-solid fa-file-import"></i>
+            Import Examinees from Excel
+        </a>
+    </p>
 
     <!-- Search/filter by Examinee ID or name -->
     <form method="GET" class="search-form">

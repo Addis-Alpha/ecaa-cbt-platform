@@ -48,6 +48,7 @@ def create_app():
     from app.models.question import Question
     from app.models.assignment import Assignment
     from app.models.attempt import Attempt
+    from app.models.exam_progress import ExamProgress
 
     with app.app_context():
 

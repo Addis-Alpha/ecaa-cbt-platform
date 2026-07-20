@@ -21,11 +21,12 @@ from app.models.exam import Exam
 from app.models.question import Question
 from app.models.assignment import Assignment
 from app.models.attempt import Attempt
+from app.models.exam_progress import ExamProgress
 
 from app.logger import app_logger
 
 import random
-import time
+from datetime import datetime, timedelta
 
 
 exam_session_bp = Blueprint(
@@ -37,121 +38,47 @@ exam_session_bp = Blueprint(
 # ======================================================
 # Helper Functions
 # ======================================================
-#
-# BUG FIX: Every session key that relates to a specific exam attempt
-# must be namespaced by exam_id. Previously "answers" and
-# "question_index" were global keys shared across ALL exams in the
-# same browser session. That meant a student who had already made
-# progress on one exam (or was assigned a second exam) could open a
-# different exam and inherit the leftover question_index / answers
-# from the first one -- silently skipping questions or submitting
-# with mostly-unanswered questions. timer_key and order_key were
-# already correctly namespaced; the fix below brings the other two
-# in line with them.
-# ======================================================
 
-def get_timer_key(exam_id):
-    """
-    Returns the session key used for storing
-    the end time of an exam.
-    """
-    return f"exam_end_time_{exam_id}"
+def get_progress(student_id, exam_id):
+
+    return ExamProgress.query.filter_by(
+        student_id=student_id,
+        exam_id=exam_id,
+    ).first()
 
 
-def get_order_key(exam_id):
+def create_progress(student_id, exam_id, assignment_id, questions, duration_minutes):
     """
-    Returns the session key used for storing
-    the randomized order of questions.
-    """
-    return f"question_order_{exam_id}"
-
-
-def get_answers_key(exam_id):
-    """
-    Returns the session key used for storing
-    the student's answers for THIS exam only.
-    """
-    return f"exam_answers_{exam_id}"
-
-
-def get_index_key(exam_id):
-    """
-    Returns the session key used for storing
-    the current question index for THIS exam only.
-    """
-    return f"exam_question_index_{exam_id}"
-
-
-def initialize_exam_session(exam, questions):
-    """
-    Creates all required session variables
-    the first time the student starts an exam.
+    Called exactly once, the first time a student opens an exam --
+    decides the randomized question order and the absolute end time,
+    then persists both to the database immediately. Every subsequent
+    request (even after a crash/disconnect) reads this same row
+    rather than recomputing anything.
     """
 
-    timer_key = get_timer_key(exam.id)
-    order_key = get_order_key(exam.id)
-    answers_key = get_answers_key(exam.id)
-    index_key = get_index_key(exam.id)
+    ids = [q.id for q in questions]
+    random.shuffle(ids)
 
-    # -----------------------------
-    # Timer
-    # -----------------------------
-    if timer_key not in session:
-
-        session[timer_key] = (
-            int(time.time())
-            +
-            exam.duration_minutes * 60
-        )
-
-    # -----------------------------
-    # Question order
-    # -----------------------------
-    if order_key not in session:
-
-        ids = [q.id for q in questions]
-
-        random.shuffle(ids)
-
-        session[order_key] = ids
-
-    # -----------------------------
-    # Answers (per-exam)
-    # -----------------------------
-    if answers_key not in session:
-
-        session[answers_key] = {}
-
-    # -----------------------------
-    # Current question (per-exam)
-    # -----------------------------
-    if index_key not in session:
-
-        session[index_key] = 0
-
-    session.modified = True
-
-
-def clear_exam_session(exam_id):
-    """
-    Removes every session value
-    related to one examination.
-    """
-
-    session.pop(get_answers_key(exam_id), None)
-    session.pop(get_index_key(exam_id), None)
-
-    session.pop(
-        get_timer_key(exam_id),
-        None
+    progress = ExamProgress(
+        student_id=student_id,
+        exam_id=exam_id,
+        assignment_id=assignment_id,
+        question_order=ids,
+        answers={},
+        current_index=0,
+        end_time=datetime.now() + timedelta(minutes=duration_minutes),
     )
 
-    session.pop(
-        get_order_key(exam_id),
-        None
-    )
+    db.session.add(progress)
+    db.session.commit()
 
-    session.modified = True
+    return progress
+
+
+def clear_progress(progress):
+
+    db.session.delete(progress)
+    db.session.commit()
 
 
 def score_exam(questions, answers):
@@ -212,13 +139,12 @@ def save_attempt(exam, score, total, percentage, assignment):
     db.session.add(attempt)
     db.session.commit()
 
-    # NEW: record that THIS ATTEMPT belongs to the current login
-    # session. The dashboard only shows a "Completed" card for
-    # attempts in this list; it's reset to empty on every fresh login
-    # (see auth.py), which is what makes the card disappear next time
-    # the student signs in. We track by attempt.id rather than
-    # assignment.id now, because the assignment row is about to be
-    # deleted below -- the attempt is what survives permanently.
+    # Record that THIS ATTEMPT belongs to the current login session.
+    # The dashboard only shows a "Completed" card for attempts in
+    # this list; it's reset to empty on every fresh login (see
+    # auth.py) and appended to here. Purely cosmetic dashboard
+    # behavior -- unrelated to exam progress recovery, which is what
+    # ExamProgress (above) exists for.
     completed_ids = session.get("completed_this_session", [])
 
     if attempt.id not in completed_ids:
@@ -227,13 +153,7 @@ def save_attempt(exam, score, total, percentage, assignment):
     session["completed_this_session"] = completed_ids
     session.modified = True
 
-    # NEW: auto-remove the assignment now that it's been fulfilled.
-    # Previously the admin had to manually delete a completed
-    # assignment before they could reassign the same exam to the same
-    # student -- the duplicate check in assign_exam() would otherwise
-    # block it. The score is safe: it's already saved above in
-    # Attempt, and the assignment_id FK uses ON DELETE SET NULL, so
-    # this deletion can't cascade into losing the score record.
+    # Auto-remove the assignment now that it's been fulfilled.
     if assignment is not None:
 
         db.session.delete(assignment)
@@ -267,28 +187,24 @@ def start_exam(id):
     exam = Exam.query.get_or_404(id)
 
     # ------------------------------------
-    # Verify assignment
+    # Verify assignment / existing progress
     # ------------------------------------
     #
     # An admin can remove an assignment at any time, including while
-    # the student is mid-exam. Per product decision: a student who is
-    # already mid-exam (i.e. has a live session for this exam_id) is
-    # allowed to finish that attempt. Only a fresh start (no existing
-    # session AND no assignment) is blocked. The attempt itself doesn't
-    # depend on the Assignment row -- Attempt is keyed by
-    # student_id/exam_id, not assignment_id -- so this is safe.
+    # the student is mid-exam. A student who is already mid-exam
+    # (i.e. has an ExamProgress row for this exam) is allowed to
+    # finish that attempt. Only a fresh start (no existing progress
+    # AND no assignment) is blocked.
 
     assignment = Assignment.query.filter_by(
         student_id=current_user.id,
         exam_id=id
     ).first()
 
-    has_active_session = get_order_key(id) in session
+    progress = get_progress(current_user.id, id)
 
-    if assignment is None and not has_active_session:
-        return "Either You have compeleted the Exam or " \
-        "This examination has not been assigned to you. " \
-        "Contact the Exam administrator if you think this is a mistake."
+    if assignment is None and progress is None:
+        return "This examination has not been assigned to you."
 
     # ------------------------------------
     # Prevent duplicate attempt
@@ -296,9 +212,7 @@ def start_exam(id):
     #
     # In normal operation a completed assignment no longer exists by
     # the time this runs -- save_attempt() deletes it automatically.
-    # This check remains as a safety net (e.g. a completed assignment
-    # that predates this behavior, or a rare race between two
-    # concurrent submissions before the delete commits).
+    # This check remains as a safety net.
 
     if assignment is not None and assignment.completed:
         return "You have already completed this examination."
@@ -315,18 +229,18 @@ def start_exam(id):
         return "This examination has no questions."
 
     # ------------------------------------
-    # Initialize session
+    # Start or resume progress
     # ------------------------------------
 
-    initialize_exam_session(
-        exam,
-        questions
-    )
+    if progress is None:
 
-    timer_key = get_timer_key(exam.id)
-    order_key = get_order_key(exam.id)
-    answers_key = get_answers_key(exam.id)
-    index_key = get_index_key(exam.id)
+        progress = create_progress(
+            current_user.id,
+            id,
+            assignment.id if assignment is not None else None,
+            questions,
+            exam.duration_minutes,
+        )
 
     # ------------------------------------
     # Load randomized order
@@ -339,7 +253,7 @@ def start_exam(id):
 
     ordered_questions = []
 
-    for question_id in session[order_key]:
+    for question_id in progress.question_order:
 
         if question_id in question_lookup:
 
@@ -353,22 +267,25 @@ def start_exam(id):
     # Current question index
     # ------------------------------------
 
-    index = session[index_key]
+    index = progress.current_index
 
     # Safety check
 
     if index >= len(questions):
         index = len(questions) - 1
-        session[index_key] = index
+        progress.current_index = index
+        db.session.commit()
 
     # ------------------------------------
     # Remaining time
     # ------------------------------------
+    #
+    # Recomputed from the absolute end_time stored in the database --
+    # correct no matter how long the student was disconnected, since
+    # nothing here depends on a client-side clock or session state.
 
-    remaining = (
-        session[timer_key]
-        -
-        int(time.time())
+    remaining = int(
+        (progress.end_time - datetime.now()).total_seconds()
     )
 
     # ------------------------------------
@@ -402,11 +319,9 @@ def start_exam(id):
 
         current_question = questions[index]
 
-        # BUG FIX: cross-check the question the browser thinks it is
-        # answering against the question the server thinks is current.
-        # If they disagree (stale tab, double submit, session desync),
-        # re-render the current question instead of silently recording
-        # the answer against the wrong question.
+        # Cross-check the question the browser thinks it is
+        # answering against the question the server thinks is
+        # current -- catches a stale tab, double submit, or desync.
         submitted_question_id = request.form.get(
             "question_id",
             type=int
@@ -425,10 +340,8 @@ def start_exam(id):
 
         selected_answer = request.form.get("answer")
 
-        # REQUIREMENT: a question must be answered before the student
-        # can move on. Reject empty submissions here (server-side, so
-        # it can't be bypassed by disabling JS / editing the form) and
-        # re-render the SAME question instead of advancing.
+        # A question must be answered before moving on. Reject empty
+        # submissions server-side and re-render the SAME question.
         if not selected_answer:
 
             flash(
@@ -442,16 +355,14 @@ def start_exam(id):
                 )
             )
 
-        # BUG FIX: previously an answer, once saved, could never be
-        # changed -- a student could correct a mis-click right up
-        # until they clicked Next/Submit. Every valid submission
-        # simply overwrites the stored answer for the current question.
-        answers = session.get(answers_key, {})
-
+        # Reassigning a NEW dict (rather than mutating progress.answers
+        # in place) so SQLAlchemy reliably detects and persists the
+        # change to this JSON column.
+        answers = dict(progress.answers or {})
         answers[str(current_question.id)] = selected_answer
+        progress.answers = answers
 
-        session[answers_key] = answers
-        session.modified = True
+        db.session.commit()
 
         app_logger.info(
             f"ANSWER SAVED | "
@@ -467,9 +378,8 @@ def start_exam(id):
 
         if index < len(questions) - 1:
 
-            session[index_key] = index + 1
-
-            session.modified = True
+            progress.current_index = index + 1
+            db.session.commit()
 
             return redirect(
                 url_for(
@@ -483,17 +393,13 @@ def start_exam(id):
         # Proceed to marking
         # ------------------------------------
 
-        answers = session.get(answers_key, {})
+        answers = progress.answers or {}
 
         score, total, percentage = score_exam(questions, answers)
 
         passed = save_attempt(
             exam, score, total, percentage, assignment
         )
-
-        # ------------------------------------
-        # Professional Logging
-        # ------------------------------------
 
         app_logger.info(
             f"EXAM COMPLETED | "
@@ -504,17 +410,7 @@ def start_exam(id):
             f"Passed={passed}"
         )
 
-        # ------------------------------------
-        # Clean Session
-        # ------------------------------------
-
-        clear_exam_session(
-            exam.id
-        )
-
-        # ------------------------------------
-        # Show Result
-        # ------------------------------------
+        clear_progress(progress)
 
         return render_template(
 
@@ -543,7 +439,7 @@ def start_exam(id):
             f"Exam={exam.code}"
         )
 
-        answers = session.get(answers_key, {})
+        answers = progress.answers or {}
 
         score, total, percentage = score_exam(questions, answers)
 
@@ -551,9 +447,7 @@ def start_exam(id):
             exam, score, total, percentage, assignment
         )
 
-        clear_exam_session(
-            exam.id
-        )
+        clear_progress(progress)
 
         flash(
             "Time is up. Your exam has been submitted automatically."
