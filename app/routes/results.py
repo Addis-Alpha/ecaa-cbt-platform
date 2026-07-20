@@ -350,7 +350,7 @@ def result_certificate(attempt_id):
 
     elements.append(
         Paragraph(
-            "Computer Based Testing Platform &mdash; "
+            "Computer Based Testing &mdash; "
             "Examination Result Certificate",
             subtitle_style,
         )
@@ -374,6 +374,13 @@ def result_certificate(attempt_id):
         ["Pass Mark", f"{attempt.exam.pass_mark}%"],
         ["Result", status_text],
         ["Date Completed", attempt.created_at.strftime("%d %B %Y")],
+        [],
+        [],
+        [],
+        [],
+        [],
+        ["Exam Administrator", "_____________________________________"],
+        ["Signature", "_____________________"]
     ]
 
     table = Table(data, colWidths=[150, 300])
@@ -385,7 +392,7 @@ def result_certificate(attempt_id):
         ("TEXTCOLOR", (0, 0), (0, -1), colors.HexColor("#0b3d91")),
         ("TOPPADDING", (0, 0), (-1, -1), 10),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
-        ("LINEBELOW", (0, 0), (-1, -2), 0.5, colors.HexColor("#e5e9f0")),
+        ("LINEBELOW", (0, 0), (-1, -2), 0.5, colors.HexColor("#ffffff")),
         ("TEXTCOLOR", (1, 7), (1, 7), status_color),
         ("FONTNAME", (1, 7), (1, 7), "Helvetica-Bold"),
     ]))
