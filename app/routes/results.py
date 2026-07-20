@@ -1,7 +1,9 @@
 import io
+from mmap import PAGESIZE
 import os
 import re
 from datetime import datetime, timedelta
+from turtle import left
 
 from flask import (
     Blueprint,
@@ -371,7 +373,7 @@ def result_certificate(attempt_id):
         ["Score", f"{attempt.score} ({attempt.percentage}%)"],
         ["Pass Mark", f"{attempt.exam.pass_mark}%"],
         ["Result", status_text],
-        ["Date Completed", attempt.created_at.strftime("%d %B %Y, %H:%M")],
+        ["Date Completed", attempt.created_at.strftime("%d %B %Y")],
     ]
 
     table = Table(data, colWidths=[150, 300])
@@ -391,21 +393,21 @@ def result_certificate(attempt_id):
     elements.append(table)
     elements.append(Spacer(1, 40))
 
-    elements.append(
-        Paragraph(
-            f"Generated on {datetime.now().strftime('%d %B %Y, %H:%M')} "
-            f"by {current_user.full_name}",
-            footer_style,
-        )
-    )
+    #elements.append(
+        #Paragraph(
+            #f"Generated on {datetime.now().strftime('%d %B %Y, %H:%M')} "
+            #f"by {current_user.full_name}",
+            #footer_style,
+        #)
+    #)
 
-    elements.append(
-        Paragraph(
-            "This is a system-generated certificate from the "
-            "ECAA CBT Platform.",
-            footer_style,
-        )
-    )
+    #elements.append(
+        #Paragraph(
+            #"This is a system-generated certificate from the "
+            #"ECAA CBT Platform.",
+            #footer_style,
+        #)
+    #)
 
     doc.build(elements)
     buffer.seek(0)
