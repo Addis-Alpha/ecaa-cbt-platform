@@ -164,21 +164,23 @@
 
             <td>
 
-                <a href="{{ url_for('questions.exam_questions', id=e.id) }}">
-                    <b>Add Questions to Exam</b>
+                <a style="color: green;"
+                    href="{{ url_for('questions.exam_questions', id=e.id) }}">
+                    <b>Add Questions to Exam  </b>
                 </a>
 
-                |
-
-                <a href="{{ url_for('exams.edit_exam', id=e.id) }}">
-                    <b>Edit Exam</b>
-                </a>
-
-                |
+                ||
 
                 <a
-                href="{{ url_for('exams.delete_exam', id=e.id) }}"
-                onclick="return confirm('Are you sure you want to delete this examination? This will also delete all its questions and assignments.');">
+                    href="{{ url_for('exams.edit_exam', id=e.id) }}">
+                    <b>  Edit Exam  </b>
+                </a>
+
+                ||
+
+                <a style="color: red;"
+                    href="{{ url_for('exams.delete_exam', id=e.id) }}"
+                    onclick="return confirm('Are you sure you want to delete this examination? This will also delete all its questions and assignments.');">
                     <b>Delete Exam</b>
                 </a>
 

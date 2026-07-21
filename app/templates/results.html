@@ -53,7 +53,9 @@ Examination Result History
             </button>
 
             {% if search or date_from or date_to %}
-            <a href="{{ url_for('results.results') }}" class="back-link">
+            <a 
+                href="{{ url_for('results.results') }}" 
+                class="back-link">
                 Clear
             </a>
             {% endif %}

@@ -81,17 +81,19 @@
         </button>
 
     </form>
+</div>
 
-    <hr>
+<div class="card">
 
-    <h2>
+    <h2 style="text-align: center;">
         Registered Examinees
     </h2>
 
     <p>
-        <a href="{{ url_for('students.import_students') }}">
+        <a 
+            href="{{ url_for('students.import_students') }}">
             <i class="fa-solid fa-file-import"></i>
-            Import Examinees from Excel
+            <b>Import Examinees from Excel</b>
         </a>
     </p>
 
@@ -174,9 +176,9 @@
                     <b>Edit Examinee</b>
                 </a>
 
-                |
+                ||
 
-                <a
+                <a style="color: red;"
                     href="{{ url_for('students.delete_student', id=s.id) }}"
                     onclick="return confirm('Are you sure you want to delete this examinee?');">
                     <b>Delete Examinee</b>
