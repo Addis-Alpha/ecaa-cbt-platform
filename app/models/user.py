@@ -74,6 +74,20 @@ class User(
         default=False
     )
 
+    # NEW: tracks whether this user currently has an active logged-in
+    # session, and which one. None = no active session (safe to log
+    # in). When set, it's a random token that must match the token
+    # stored in the browser's session cookie -- if they don't match
+    # (e.g. an admin force-logged the user out, or a second login was
+    # blocked and somehow proceeded anyway), the before_request hook
+    # in app/__init__.py force-logs-out that browser. Cleared on
+    # logout (see auth.py:logout) or by an admin's "force logout"
+    # action.
+    active_session_token = db.Column(
+        db.String(100),
+        nullable=True
+    )
+
     assignments = db.relationship(
         "Assignment",
         back_populates="student",

@@ -556,3 +556,37 @@ def import_students():
         "import_students.html",
         report=report,
     )
+
+
+from flask import jsonify
+
+
+# ==========================
+# LIVE SESSION STATUS (AJAX)
+# ==========================
+#
+# NEW: returns current active/inactive status for every student, as
+# JSON. Polled periodically by students.html via JavaScript so the
+# admin sees live updates (a student logging out, or being force-
+# logged-out) without needing to manually refresh the page.
+
+@students_bp.route(
+    "/students/status",
+    methods=["GET"],
+)
+@login_required
+def students_status():
+
+    if current_user.role != "admin":
+        abort(403)
+
+    students = User.query.filter_by(
+        role="student"
+    ).all()
+
+    data = {
+        str(s.id): bool(s.active_session_token)
+        for s in students
+    }
+
+    return jsonify(data)

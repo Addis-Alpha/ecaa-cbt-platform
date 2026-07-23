@@ -1,3 +1,5 @@
+import uuid
+
 from flask import (Blueprint, render_template, request, redirect, url_for, flash, session)
 from flask_login import (login_user, logout_user, login_required, current_user)
 from werkzeug.security import (check_password_hash, generate_password_hash)
@@ -41,9 +43,42 @@ def login():
             )
         ):
 
+            # NEW: block this login if the account already has an
+            # active session elsewhere. Admins can force-clear a
+            # stuck token from the admin panel (see admin.py) if a
+            # student's browser/device died mid-session without
+            # logging out properly.
+            if user.active_session_token is not None:
+
+                security_logger.warning(
+                    f"BLOCKED CONCURRENT LOGIN | "
+                    f"User={user.username or user.student_id} | "
+                    f"IP={request.remote_addr}"
+                )
+
+                flash(
+                    "This account is already logged in on another "
+                    "device. Please log out there first, or contact "
+                    "an admin if you believe this is an error."
+                )
+
+                return redirect(
+                    url_for("auth.login")
+                )
+
+            # NEW: issue a fresh random token for this login, store it
+            # both on the User row (server-side source of truth) and
+            # in this browser's session cookie. The before_request
+            # hook compares the two on every request.
+            new_token = str(uuid.uuid4())
+            user.active_session_token = new_token
+            db.session.commit()
+
             login_user(user)
 
-            # NEW: reset the "completed this session" marker on every
+            session["session_token"] = new_token
+
+            # reset the "completed this session" marker on every
             # fresh login. This is what makes a completed exam card
             # disappear from the student dashboard after they log out
             # and log back in -- the card's visibility is tied to this
@@ -120,6 +155,11 @@ def logout():
         f"User={current_user.username} | "
         f"IP={request.remote_addr}"
     )
+
+    # NEW: free up this user's session slot so they (or someone else,
+    # if the account is shared) can log in again immediately.
+    current_user.active_session_token = None
+    db.session.commit()
 
     logout_user()
 

@@ -147,13 +147,19 @@
             </th>
 
             <th>
+                Session Status
+            </th>
+
+            <th>
                 Actions
             </th>
 
         </tr>
 
         {% for s in students %}
-        <tr>
+        <!-- NEW: data-student-id lets the JS below find and update
+             this row without a full page reload -->
+        <tr data-student-id="{{ s.id }}">
             <td>
                 {{ s.student_id }}
             </td>
@@ -170,6 +176,19 @@
                 {{ s.job_title or "—" }}
             </td>
 
+            <!-- NEW: session status indicator, kept up to date by JS -->
+            <td class="session-status-cell">
+                {% if s.active_session_token %}
+                    <span class="session-status" style="color: green;">
+                        <b>Active</b>
+                    </span>
+                {% else %}
+                    <span class="session-status" style="color: gray;">
+                        Logged out
+                    </span>
+                {% endif %}
+            </td>
+
             <td>
                 <a 
                     href="{{ url_for('students.edit_student', id=s.id) }}">
@@ -183,6 +202,20 @@
                     onclick="return confirm('Are you sure you want to delete this examinee?');">
                     <b>Delete Examinee</b>
                 </a>
+
+                <!-- NEW: wrapped in a span so JS can show/hide it
+                     live, without needing to rebuild the whole row -->
+                <span class="force-logout-wrapper" style="{{ '' if s.active_session_token else 'display:none;' }}">
+                ||
+
+                <form action="{{ url_for('admin.force_logout', user_id=s.id) }}" method="POST" style="display:inline;">
+                    <button type="submit"
+                        style="color: red; background: none; border: none; padding: 0; font: inherit; cursor: pointer; text-decoration: underline;"
+                        onclick="return confirm('Force log out {{ s.full_name or s.student_id }}? They will be able to log in again immediately.');">
+                        <b>Force Logout</b>
+                    </button>
+                </form>
+                </span>
             </td>
         </tr>
         {% endfor %}
@@ -209,4 +242,55 @@
     </a>
 
 </div>
+
+<!-- NEW: polls /students/status every few seconds and updates the
+     Session Status column + Force Logout visibility live, without a
+     full page reload. Only runs on this page. -->
+<script>
+(function () {
+
+    function updateStatuses() {
+
+        fetch("{{ url_for('students.students_status') }}")
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (statusMap) {
+
+                document.querySelectorAll("tr[data-student-id]").forEach(function (row) {
+
+                    var studentId = row.getAttribute("data-student-id");
+                    var isActive = statusMap[studentId];
+
+                    var statusCell = row.querySelector(".session-status");
+                    var forceLogoutWrapper = row.querySelector(".force-logout-wrapper");
+
+                    if (isActive) {
+                        statusCell.textContent = "Active";
+                        statusCell.style.color = "green";
+                        if (forceLogoutWrapper) {
+                            forceLogoutWrapper.style.display = "";
+                        }
+                    } else {
+                        statusCell.textContent = "Logged out";
+                        statusCell.style.color = "gray";
+                        if (forceLogoutWrapper) {
+                            forceLogoutWrapper.style.display = "none";
+                        }
+                    }
+                });
+            })
+            .catch(function (err) {
+                // Silently ignore a failed poll (e.g. brief network
+                // blip) -- it'll just try again on the next interval.
+                console.warn("Status refresh failed:", err);
+            });
+    }
+
+    // Poll every 5 seconds. Adjust if you want it snappier or lighter.
+    setInterval(updateStatuses, 5000);
+
+})();
+</script>
+
 {% endblock %}

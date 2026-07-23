@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, url_for
+from flask import Flask, request, redirect, url_for, session
 
 from flask_login import current_user
 
@@ -114,7 +114,7 @@ def create_app():
     # Force password change when required
     # -------------------------
     #
-    # NEW: while a user's must_change_password flag is True (set for
+    # While a user's must_change_password flag is True (set for
     # the auto-created default admin -- see app/seed.py), every page
     # except the change-password page itself, logout, and static
     # assets redirects back to the change-password page. This runs on
@@ -148,5 +148,58 @@ def create_app():
         return redirect(
             url_for("auth.change_password")
         )
+
+    # -------------------------
+    # Enforce single active session per user
+    # -------------------------
+    #
+    # NEW: every login issues a fresh random token, stored both on
+    # the User row (server-side truth) and in this browser's session
+    # cookie (see auth.py:login). On every request, we confirm the
+    # two still match. If they don't -- e.g. an admin force-logged
+    # this user out from another device, or the account somehow ended
+    # up logged in twice -- this browser is immediately signed out.
+    #
+    # Runs after enforce_password_change on purpose: order between
+    # the two before_request hooks doesn't matter functionally here,
+    # since they check unrelated conditions, but keeping password
+    # enforcement first preserves the original behavior/log ordering.
+
+    @app.before_request
+    def enforce_single_session():
+
+        if not current_user.is_authenticated:
+            return
+
+        if request.endpoint is None:
+            return
+
+        allowed_endpoints = {
+            "auth.logout",
+            "static",
+        }
+
+        if request.endpoint in allowed_endpoints:
+            return
+
+        token_in_browser = session.get("session_token")
+        token_on_record = getattr(current_user, "active_session_token", None)
+
+        if token_in_browser != token_on_record:
+
+            from flask_login import logout_user
+            from flask import flash
+
+            logout_user()
+            session.clear()
+
+            flash(
+                "Your session has ended because this account was "
+                "logged in elsewhere, or was signed out by an admin."
+            )
+
+            return redirect(
+                url_for("auth.login")
+            )
 
     return app
