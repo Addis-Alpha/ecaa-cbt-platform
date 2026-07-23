@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from flask import (Blueprint, render_template, request, redirect, url_for, flash, session)
 from flask_login import (login_user, logout_user, login_required, current_user)
@@ -43,11 +44,12 @@ def login():
             )
         ):
 
-            # NEW: block this login if the account already has an
-            # active session elsewhere. Admins can force-clear a
-            # stuck token from the admin panel (see admin.py) if a
-            # student's browser/device died mid-session without
-            # logging out properly.
+            # Block concurrent logins for students only. Admins are
+            # exempt -- with typically only one admin account per
+            # deployment, and admins being the only ones who can
+            # Force Logout a stuck session, blocking admins here
+            # risks a total lockout with no recovery path except
+            # direct database access.
             if user.role == "student" and user.active_session_token is not None:
 
                 security_logger.warning(
@@ -66,12 +68,15 @@ def login():
                     url_for("auth.login")
                 )
 
-            # NEW: issue a fresh random token for this login, store it
+            # Issue a fresh random token for this login, store it
             # both on the User row (server-side source of truth) and
-            # in this browser's session cookie. The before_request
-            # hook compares the two on every request.
+            # in this browser's session cookie. Also stamp
+            # last_activity now, so a fresh login never starts out
+            # already "timed out" (see enforce_single_session in
+            # app/__init__.py).
             new_token = str(uuid.uuid4())
             user.active_session_token = new_token
+            user.last_activity = datetime.utcnow()
             db.session.commit()
 
             login_user(user)
@@ -156,8 +161,6 @@ def logout():
         f"IP={request.remote_addr}"
     )
 
-    # NEW: free up this user's session slot so they (or someone else,
-    # if the account is shared) can log in again immediately.
     current_user.active_session_token = None
     db.session.commit()
 
