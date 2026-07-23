@@ -49,6 +49,7 @@ def create_app():
     from app.models.assignment import Assignment
     from app.models.attempt import Attempt
     from app.models.exam_progress import ExamProgress
+    from app.models.system_heartbeat import SystemHeartbeat
 
     with app.app_context():
 
@@ -60,6 +61,22 @@ def create_app():
         # app/seed.py for details).
         from app.seed import seed_default_admin
         seed_default_admin()
+
+        # NEW: detect a genuine server-side outage (the app itself
+        # being down, not an individual student's own connection
+        # dropping) and push every in-progress exam's deadline back
+        # by exactly how long the server was unreachable. See
+        # app/heartbeat.py for the full reasoning.
+        from app.heartbeat import (
+            apply_downtime_compensation,
+            start_heartbeat_thread,
+        )
+        apply_downtime_compensation()
+
+    # Runs outside the app_context block above since it manages its
+    # own context internally (it's a long-lived background thread,
+    # not a one-time startup task).
+    start_heartbeat_thread(app)
 
     # -------------------------
     # Import blueprints
