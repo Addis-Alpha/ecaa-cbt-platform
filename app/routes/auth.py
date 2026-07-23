@@ -48,7 +48,7 @@ def login():
             # stuck token from the admin panel (see admin.py) if a
             # student's browser/device died mid-session without
             # logging out properly.
-            if user.active_session_token is not None:
+            if user.role == "student" and user.active_session_token is not None:
 
                 security_logger.warning(
                     f"BLOCKED CONCURRENT LOGIN | "
