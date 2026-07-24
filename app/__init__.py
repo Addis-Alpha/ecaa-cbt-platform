@@ -14,11 +14,11 @@ from app.extensions import (
 from app.logger import app_logger
 
 
-# NEW: how long a session can sit with no page requests before it's
-# automatically treated as abandoned and freed up. 20 minutes per
+# how long a session can sit with no page requests before it's
+# automatically treated as abandoned and freed up. 10 minutes per
 # product decision -- covers a closed tab, dead device, or dropped
 # wifi without needing an admin to manually notice and intervene.
-INACTIVITY_TIMEOUT = timedelta(minutes=20)
+INACTIVITY_TIMEOUT = timedelta(minutes=10)
 
 
 def create_app():
