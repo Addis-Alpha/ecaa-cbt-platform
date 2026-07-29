@@ -84,6 +84,13 @@
 
             {% endif %}
 
+            {% if request.endpoint != "auth.change_password" %}
+            <a href="{{ url_for('auth.change_password') }}">
+                <i class="fa-solid fa-key"></i>
+                Change Password
+            </a>
+            {% endif %}
+
             <a href="{{ url_for('auth.logout') }}">
                 <i class="fa-solid fa-right-from-bracket"></i>
                 Logout
