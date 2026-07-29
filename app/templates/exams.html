@@ -15,10 +15,10 @@
         Create, update and manage examinations available in the CBT system.
     </p>
 
-    <p style="text-align: right;">
+    <p>
         <a href="{{ url_for('questions.search_questions') }}">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <b>Search Questions Across All Examinations</b>
+            Search Questions Across All Examinations
         </a>
     </p>
 
@@ -31,7 +31,6 @@
             </label>
 
             <input
-            style="width: 25%;"
             name="code"
             placeholder="Enter Examination Code"
             autocomplete="off"
@@ -44,7 +43,6 @@
             </label>
 
             <input
-            style="width: 25%;"
             name="title"
             placeholder="Enter Examination Title"
             required>
@@ -57,7 +55,6 @@
             </label>
 
             <input
-            style="width: 15%;"
             type="number"
             name="duration"
             placeholder="Duration in Minutes"
@@ -71,7 +68,6 @@
             </label>
 
             <input
-            style="width: 15%;"
             type="number"
             name="pass_mark"
             placeholder="Pass Percentage"
@@ -88,10 +84,8 @@
     </form>
 
     <hr>
-</div>
 
-<div class="card">
-    <h2 style="text-align: center;">
+    <h2>
         Available Examinations
     </h2>
 
@@ -164,23 +158,21 @@
 
             <td>
 
-                <a style="color: green;"
-                    href="{{ url_for('questions.exam_questions', id=e.id) }}">
-                    <b>Add Questions to Exam  </b>
+                <a href="{{ url_for('questions.exam_questions', id=e.id) }}">
+                    <b>Add Questions to Exam</b>
                 </a>
 
-                ||
+                |
+
+                <a href="{{ url_for('exams.edit_exam', id=e.id) }}">
+                    <b>Edit Exam</b>
+                </a>
+
+                |
 
                 <a
-                    href="{{ url_for('exams.edit_exam', id=e.id) }}">
-                    <b>  Edit Exam  </b>
-                </a>
-
-                ||
-
-                <a style="color: red;"
-                    href="{{ url_for('exams.delete_exam', id=e.id) }}"
-                    onclick="return confirm('Are you sure you want to delete this examination? This will also delete all its questions and assignments.');">
+                href="{{ url_for('exams.delete_exam', id=e.id) }}"
+                onclick="return confirm('Are you sure you want to delete this examination? This will also delete all its questions, assignments, and any recorded results for it. This cannot be undone.');">
                     <b>Delete Exam</b>
                 </a>
 
@@ -201,16 +193,6 @@
     </div>
 
     {% endif %}
-
-    <hr>
-    <br>
-
-    <a 
-        class="back-link"
-        href="{{ url_for('admin.dashboard') }}">
-        <i class="fa-solid fa-arrow-left"></i>
-        Back to Dashboard
-    </a>
 
 </div>
 {% endblock %}

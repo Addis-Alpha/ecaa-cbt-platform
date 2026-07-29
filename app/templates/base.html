@@ -11,9 +11,6 @@
                 ECAA CBT Platform
             {% endblock %}
         </title>
-        <link
-            rel="icon" type="image/ico"
-            href="static/images/ODF.ico">
 
         <link 
             rel="stylesheet" 
@@ -64,18 +61,27 @@
         {% if current_user.is_authenticated %}
         <nav class="navbar">
 
-            {% if current_user.role=="admin" %}
-            <a 
-                href="{{ url_for('admin.dashboard') }}">
-                <i class="fa-solid fa-house"></i>
-                Dashboard
-            </a>
+            {# NEW: the Dashboard link only shows when NOT already on
+               the current user's own dashboard page -- no point
+               linking to the page you're already looking at. Checked
+               by endpoint name rather than role alone, so it stays
+               correct even if that ever changes. #}
+            {% if request.endpoint not in ["admin.dashboard", "student.student_dashboard"] %}
 
-            {% else %}
-            <a href="{{ url_for('student.student_dashboard') }}">
-                <i class="fa-solid fa-house"></i>
-                Dashboard
-            </a>
+                {% if current_user.role=="admin" %}
+                <a 
+                    href="{{ url_for('admin.dashboard') }}">
+                    <i class="fa-solid fa-house"></i>
+                    Dashboard
+                </a>
+
+                {% else %}
+                <a href="{{ url_for('student.student_dashboard') }}">
+                    <i class="fa-solid fa-house"></i>
+                    Dashboard
+                </a>
+                {% endif %}
+
             {% endif %}
 
             <a href="{{ url_for('auth.logout') }}">
@@ -89,7 +95,7 @@
             {% with messages = get_flashed_messages() %}
             {% if messages %}
             {% for msg in messages %}
-            <div class="message">
+            <div class="message flash-message">
                 <i class="fa-solid fa-circle-check"></i>
                 {{ msg }}
             </div>
@@ -109,5 +115,36 @@
                 Developed By Addishiwot K. (afdocz@gmail.com)
             </p>
         </footer>
+
+        <script>
+            // NEW: flash messages auto-dismiss after a few seconds
+            // instead of sitting on screen until the page is
+            // reloaded or navigated away from. Fades out smoothly,
+            // then removes the element entirely. Degrades gracefully
+            // if JS is ever disabled -- the message just stays
+            // visible, exactly like before.
+            document.addEventListener("DOMContentLoaded", function () {
+
+                var FADE_AFTER_MS = 4000;
+                var FADE_DURATION_MS = 400;
+
+                var messages = document.querySelectorAll(".flash-message");
+
+                messages.forEach(function (el) {
+
+                    el.style.transition = "opacity " + FADE_DURATION_MS + "ms ease";
+
+                    setTimeout(function () {
+
+                        el.style.opacity = "0";
+
+                        setTimeout(function () {
+                            el.remove();
+                        }, FADE_DURATION_MS);
+
+                    }, FADE_AFTER_MS);
+                });
+            });
+        </script>
     </body>
 </html>

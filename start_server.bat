@@ -53,7 +53,7 @@ echo  server is live and ready for students to connect.
 echo ============================================================
 echo.
 
-REM Change "serve.py" below if your Waitress launcher script has a
+REM Change "server.py" below if your Waitress launcher script has a
 REM different filename.
 python server.py
 

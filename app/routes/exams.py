@@ -17,6 +17,8 @@ from app.extensions import db
 from app.models.exam import Exam
 from app.models.assignment import Assignment
 from app.models.question import Question
+from app.models.attempt import Attempt
+from app.models.exam_progress import ExamProgress
 from app.logger import app_logger
 
 
@@ -219,6 +221,21 @@ def delete_exam(id):
         abort(403)
 
     exam = Exam.query.get_or_404(id)
+
+    # BUG FIX: Attempt.exam_id and ExamProgress.exam_id are both
+    # required (non-nullable) foreign keys with no cascade rule. If
+    # even one student had ever taken this exam (creating an Attempt)
+    # or was currently mid-exam (an ExamProgress row), deleting the
+    # exam without clearing these first violated the foreign key
+    # constraint at the database level -- which surfaced as a 500
+    # error, making it look like deletion "just didn't work."
+    ExamProgress.query.filter_by(
+        exam_id=id
+    ).delete()
+
+    Attempt.query.filter_by(
+        exam_id=id
+    ).delete()
 
     Assignment.query.filter_by(
         exam_id=id
